@@ -1,4 +1,4 @@
-/* I make this project when I was studying in the book:
+/* I make this project when I was reading the book:
 
     `Practical TensorFlow.js Deep Learning in Web App Development by Juan De Dios Santos Rivera`
 
