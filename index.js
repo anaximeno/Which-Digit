@@ -127,6 +127,5 @@ async function loadModel(path)
             p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
     });
 
-    loadModel('./tfjs/DigitRec/model.json');  // TODO: create a better model!
-    // NOTE: when training the new model aply data augmentation by change the position of the numbers on the image.
+    loadModel('./tfjs/DigitRec/model.json');
 })();
