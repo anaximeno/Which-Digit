@@ -1,6 +1,6 @@
 * {
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: auto;
 }
 html {
     width: 100%;
