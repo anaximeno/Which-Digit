@@ -56,7 +56,8 @@ function prepareCanvas()
 }
 
 
-function createButton(innerText, selector, id, listener, disabled = false) {
+function createButton(innerText, selector, id, listener, disabled = false)
+{
     const btn = document.createElement('BUTTON');
     btn.innerText = innerText;
     btn.id = id;
@@ -90,7 +91,8 @@ async function loadModel(path)
 }
 
 
-(function init(){
+(function init()
+ {
     prepareCanvas();
 
     createButton('Predict', '#pipeline', 'predict-btn', () => {
