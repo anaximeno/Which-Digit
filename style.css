@@ -57,3 +57,10 @@ h1 {
     font-weight: 400;
     letter-spacing: 2px;
 }
+footer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 5px;
+    font-family: 'Noto Sans JP', sans-serif;
+}
