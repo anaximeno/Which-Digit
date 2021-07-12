@@ -19,14 +19,13 @@
     <link rel="stylesheet" href="style.css">
     <title>Digit Recognition with Tensorflow JS</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.7.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
     <style media="screen">
         @media only screen and (max-width: 560px) {
             h1 {
                 font-size: 1.5em;
             }
             #predict-output {
-                font-size: 0.8em;
+                font-size: 1.0em;
             }
         }
         @media only screen and (max-width: 422px) {
@@ -34,15 +33,18 @@
                 font-size: 1.3em;
             }
             #predict-output {
-                font-size: 0.8em;
+                font-size: 1.0em;
             }
-        }
+            .top-text {
+		font-size: 0.6em;
+	    }
+	}
         @media only screen and (max-width: 376px) {
             h1 {
                 font-size: 1.1em;
             }
             #predict-output {
-                font-size: 0.6em;
+                font-size: 0.8em;
             }
         }
         @media only screen and (max-width: 313px) {
@@ -50,7 +52,7 @@
                 font-size: 0.9em;
             }
             #predict-output {
-                font-size: 0.4em;
+                font-size: 0.8em;
             }
         }
     </style>
@@ -59,13 +61,13 @@
     <main>
         <div class="box">
             <h1>Handwritten Digits Recognition App</h1>
+	        <div id="predict-output">Loading Model...</div>
             <canvas id="draw-canvas" class="digits-canvas"></canvas>
-            <div id="predict-output">Loading Model...</div>
             <div id="pipeline"></div>
         </div>
     </main>
 
-    <footer>by: Anaxímeno Brito</footer>
+    <div class="top-text">by: Anaxímeno Brito</div>
     <script src="./index.js" type="module"></script>
 </body>
 </html>

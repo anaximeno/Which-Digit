@@ -61,10 +61,10 @@ h1 {
     width: 100%;
 }
 
-footer {
+.top-text {
     position: absolute;
     right: 0;
-    bottom: 0;
+    top: 0;
     padding: 5px;
     font-family: 'Noto Sans JP', sans-serif;
 }

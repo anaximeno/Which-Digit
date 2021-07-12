@@ -121,21 +121,24 @@ async function loadModel(path)
 }
 
 
-function predict()
+async function predict()
 {
     const p = document.getElementById('predict-output');
     const canvas = document.getElementById('draw-canvas');
 
+    p.innerText = 'Predicting...';
+    
     const toPredict = tf.browser.fromPixels(canvas)
-        .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-        .mean(2)
-        .expandDims()
-        .expandDims(3)
-        .toFloat()
-        .div(255.0);
-
+    .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
+    .mean(2)
+    .expandDims()
+    .expandDims(3)
+    .toFloat()
+    .div(255.0);
+    
     const prediction = model.predict(toPredict).dataSync();
-
+    
+    await sleep(350); // Intentional sleep!
 
     p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
 }
