@@ -1,63 +1,91 @@
-/* I make this project when I was reading the book:
-
-    `Practical TensorFlow.js Deep Learning in Web App Development by Juan De Dios Santos Rivera`
-
-I recommend!
-*/
-
 let model;
 let isModelLoaded = false;
 const IMAGE_SIZE = 28;
 
 let lastPosition = {x: 0, y: 0};
 let drawing = false;
-const canvasSize = 400;
-let ctx;
 
+const canvasSize = 500;
+let ctx;
+let ctxSize = 28;
+let resizeSub = 25;
+
+
+function sleep (milisecs)
+{
+    return new Promise(resolve => setTimeout(resolve, milisecs));
+}
 
 function prepareCanvas()
 {
     const canvas = document.getElementById('draw-canvas');
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
+    canvas.width = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
+    canvas.height = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth  - resizeSub;
 
     ctx = canvas.getContext('2d');
     ctx.strokeStyle = 'white';
     ctx.fillStyle = 'white';
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.lineWidth = 25;
+    ctx.lineWidth = ctxSize;
 
+    /*  For the Laptop / Desktop Computer   */
     canvas.addEventListener('mousedown', (e) => {
         drawing = true;
-        if (isModelLoaded) enableButton("predict-btn");
-
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
-    
+
     canvas.addEventListener('mouseout', () => {
         drawing = false;
-    })
-    
+    });
+
     canvas.addEventListener('mousemove', (e) => {
         if (!drawing) return ;
-    
+
         ctx.beginPath();
         ctx.moveTo(lastPosition.x, lastPosition.y);
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.stroke();
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
-    
-    
-    canvas.addEventListener('mouseup', () => {
+    canvas.addEventListener('mouseup', async () => {
         drawing = false;
+
+        await sleep(700);
+        if (!drawing) predict();
+    });
+
+    /*  For touch screen    */
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        drawing = true;
+
+        lastPosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+
+    });
+    canvas.addEventListener('touchmove', (e) => {
+        if (!drawing) return ;
+
+        e.preventDefault();
+        let touch = e.touches[0];
+
+        ctx.beginPath();
+        ctx.moveTo(lastPosition.x, lastPosition.y);
+        ctx.lineTo(touch.pageX , touch.pageY);
+        ctx.stroke();
+        lastPosition = { x: touch.pageX, y: touch.pageY};
+
+    });
+    canvas.addEventListener('touchend', async () => {
+        drawing = false;
+
+        await sleep(550);
+        if (!drawing) predict();
     });
 }
 
 
-function createButton(innerText, selector, id, listener, disabled = false)
-{
+function createButton(innerText, selector, id, listener, disabled = false) {
     const btn = document.createElement('BUTTON');
     btn.innerText = innerText;
     btn.id = id;
@@ -85,46 +113,66 @@ async function loadModel(path)
     isModelLoaded = true;
 
     const p = document.getElementById("predict-output");
+
     // Uncomment the line below if you want to see output on your browser console.
     // console.log("The model was loaded successfully!");
+
     p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
 }
 
 
-(function init()
- {
+function predict()
+{
+    const p = document.getElementById('predict-output');
+    const canvas = document.getElementById('draw-canvas');
+
+    const toPredict = tf.browser.fromPixels(canvas)
+        .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
+        .mean(2)
+        .expandDims()
+        .expandDims(3)
+        .toFloat()
+        .div(255.0);
+
+    const prediction = model.predict(toPredict).dataSync();
+
+
+    p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
+}
+
+
+(function init(){
+    const p = document.getElementById('predict-output');
+
+    if (window.innerWidth < 280)
+        ctxSize = 15;
+
     prepareCanvas();
 
-    createButton('Predict', '#pipeline', 'predict-btn', () => {
-        const p = document.getElementById("predict-output");
-	
-	if (!isModelLoaded)
-	{
-		p.innerHTML = "The model was not loaded already!";
-		return ;
-	}
-        const canvas = document.getElementById('draw-canvas');
-
-        const toPredict = tf.browser.fromPixels(canvas)
-            .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-            .mean(2)
-            .expandDims()
-            .expandDims(3)
-            .toFloat()
-            .div(255.0);
-    
-        const prediction = model.predict(toPredict).dataSync();
-
-        p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
-    }, true);
 
     createButton('Clear', '#pipeline', 'clear-btn', () => {
         ctx.clearRect(0, 0, canvasSize, canvasSize);
-        disableButton("predict-btn");
 
-        const p = document.getElementById("predict-output");
         if (isModelLoaded)
             p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+    });
+
+    const pipe = document.getElementById('pipeline');
+
+    p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
+         canvasSize : window.innerWidth - resizeSub}px`;
+    pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
+        canvasSize : window.innerWidth - resizeSub}px`;
+
+
+    window.addEventListener('resize', () => {
+        ctxSize = window.innerWidth > 280 ? 25 : 15;
+
+        prepareCanvas();
+        p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
+             canvasSize : window.innerWidth - resizeSub}px`;
+        pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
+             canvasSize : window.innerWidth - resizeSub}px`;
     });
 
     loadModel('./tfjs/DigitRec/model.json');

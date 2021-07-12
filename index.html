@@ -16,11 +16,44 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="msapplication-config" content="favicon/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="style.css">
     <title>Digit Recognition with Tensorflow JS</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.7.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
-	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <link rel="stylesheet" href="./style.css">
+    <style media="screen">
+        @media only screen and (max-width: 560px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            #predict-output {
+                font-size: 0.8em;
+            }
+        }
+        @media only screen and (max-width: 422px) {
+            h1 {
+                font-size: 1.3em;
+            }
+            #predict-output {
+                font-size: 0.8em;
+            }
+        }
+        @media only screen and (max-width: 376px) {
+            h1 {
+                font-size: 1.1em;
+            }
+            #predict-output {
+                font-size: 0.6em;
+            }
+        }
+        @media only screen and (max-width: 313px) {
+            h1 {
+                font-size: 0.9em;
+            }
+            #predict-output {
+                font-size: 0.4em;
+            }
+        }
+    </style>
 </head>
 <body>
     <main>
@@ -31,6 +64,7 @@
             <div id="pipeline"></div>
         </div>
     </main>
+
     <footer>by: Anaxímeno Brito</footer>
     <script src="./index.js" type="module"></script>
 </body>
