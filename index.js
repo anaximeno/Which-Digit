@@ -1,3 +1,10 @@
+/* I make this project when I was studying in the book:
+
+    `Practical TensorFlow.js Deep Learning in Web App Development by Juan De Dios Santos Rivera`
+
+I recommend!
+*/
+
 let model;
 let isModelLoaded = false;
 const IMAGE_SIZE = 28;
