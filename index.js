@@ -39,8 +39,10 @@ function prepareCanvas()
         let wasDrawing = drawing;
 	drawing = false;
 
-    	await sleep(1100);
-	if (wasDrawing && !drawing) predict();
+	if (wasDrawing && !drawing) {
+    		await sleep(1100);
+		predict();
+	}
     });
 
     canvas.addEventListener('mousemove', (e) => {
