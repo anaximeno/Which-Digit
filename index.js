@@ -35,8 +35,12 @@ function prepareCanvas()
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
 
-    canvas.addEventListener('mouseout', () => {
-        drawing = false;
+    canvas.addEventListener('mouseout', async () => {
+        let wasDrawing = drawing;
+	drawing = false;
+
+    	await sleep(1100);
+	if (wasDrawing && !drawing) predict();
     });
 
     canvas.addEventListener('mousemove', (e) => {
