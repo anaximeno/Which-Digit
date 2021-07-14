@@ -60,21 +60,34 @@ function prepareCanvas()
     /* For touch screen */
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        drawing = true;
-
-        lastPosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
-    });
-    canvas.addEventListener('touchmove', (e) => {
-        if (!drawing) return ;
-
-        e.preventDefault();
+    	
+        let clientRect = canvas.getBoundingClientRect();
         let touch = e.touches[0];
 
+        drawing = true;
+
+        let X = touch.pageX - clientRect.x;
+        let Y = touch.pageY - clientRect.y;
+
+        lastPosition = { x: X, y: Y };
+    });
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        
+        if (!drawing) return ;
+
+        let clientRect = canvas.getBoundingClientRect();
+        let touch = e.touches[0];
+
+        
+        let X = touch.pageX - clientRect.x;
+        let Y = touch.pageY - clientRect.y;
+    
         ctx.beginPath();
         ctx.moveTo(lastPosition.x, lastPosition.y);
-        ctx.lineTo(touch.pageX , touch.pageY);
+        ctx.lineTo(X, Y);
         ctx.stroke();
-        lastPosition = { x: touch.pageX, y: touch.pageY};
+        lastPosition = { x: X, y: Y};
     });
     canvas.addEventListener('touchend', async () => {
         drawing = false;
@@ -174,7 +187,7 @@ async function predict()
 
         prepareCanvas();
 	if (isModelLoaded)
-            p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+        p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
 
 	p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
              canvasSize : window.innerWidth - resizeSub}px`;
