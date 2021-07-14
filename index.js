@@ -128,6 +128,7 @@ async function predict()
 
     p.innerText = 'Predicting...';
     
+    tf.engine().startScope();
     const toPredict = tf.browser.fromPixels(canvas)
     .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
     .mean(2)
@@ -141,6 +142,7 @@ async function predict()
     await sleep(350); // Intentional sleep!
 
     p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
+    tf.engine().endScope();
 }
 
 
@@ -171,7 +173,10 @@ async function predict()
         ctxSize = window.innerWidth > 280 ? 25 : 15;
 
         prepareCanvas();
-        p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
+	if (isModelLoaded)
+            p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+
+	p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
              canvasSize : window.innerWidth - resizeSub}px`;
         pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
              canvasSize : window.innerWidth - resizeSub}px`;
