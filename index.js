@@ -66,10 +66,10 @@ function prepareCanvas()
 
         drawing = true;
 
-        let X = touch.pageX - clientRect.x;
-        let Y = touch.pageY - clientRect.y;
+        let x = touch.pageX - clientRect.x;
+        let y = touch.pageY - clientRect.y;
 
-        lastPosition = { x: X, y: Y };
+        lastPosition = { x, y };
     });
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
@@ -80,14 +80,14 @@ function prepareCanvas()
         let touch = e.touches[0];
 
         
-        let X = touch.pageX - clientRect.x;
-        let Y = touch.pageY - clientRect.y;
+        let x = touch.pageX - clientRect.x;
+        let y = touch.pageY - clientRect.y;
     
         ctx.beginPath();
         ctx.moveTo(lastPosition.x, lastPosition.y);
-        ctx.lineTo(X, Y);
+        ctx.lineTo(x, y);
         ctx.stroke();
-        lastPosition = { x: X, y: Y};
+        lastPosition = { x, y };
     });
     canvas.addEventListener('touchend', async () => {
         drawing = false;
