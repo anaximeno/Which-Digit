@@ -29,22 +29,18 @@ function prepareCanvas()
     ctx.lineCap = 'round';
     ctx.lineWidth = ctxSize;
 
-    /*  For the Laptop / Desktop Computer   */
+    /* For the Laptop / Desktop Computer */
     canvas.addEventListener('mousedown', (e) => {
         drawing = true;
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
-
     canvas.addEventListener('mouseout', async () => {
         let wasDrawing = drawing;
 	drawing = false;
 
-	if (wasDrawing && !drawing) {
-    		await sleep(1100);
-		predict();
-	}
+    	await sleep(1100);
+	if (wasDrawing && !drawing) predict();
     });
-
     canvas.addEventListener('mousemove', (e) => {
         if (!drawing) return ;
 
@@ -61,13 +57,12 @@ function prepareCanvas()
         if (!drawing) predict();
     });
 
-    /*  For touch screen    */
+    /* For touch screen */
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         drawing = true;
 
         lastPosition = { x: e.touches[0].pageX, y: e.touches[0].pageY };
-
     });
     canvas.addEventListener('touchmove', (e) => {
         if (!drawing) return ;
@@ -80,7 +75,6 @@ function prepareCanvas()
         ctx.lineTo(touch.pageX , touch.pageY);
         ctx.stroke();
         lastPosition = { x: touch.pageX, y: touch.pageY};
-
     });
     canvas.addEventListener('touchend', async () => {
         drawing = false;
@@ -157,7 +151,6 @@ async function predict()
         ctxSize = 15;
 
     prepareCanvas();
-
 
     createButton('Clear', '#pipeline', 'clear-btn', () => {
         ctx.clearRect(0, 0, canvasSize, canvasSize);
