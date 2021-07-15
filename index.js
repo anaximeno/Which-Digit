@@ -10,7 +10,6 @@ let ctx;
 let ctxSize = 28;
 let resizeSub = 25;
 
-
 function sleep (milisecs)
 {
     return new Promise(resolve => setTimeout(resolve, milisecs));
@@ -35,10 +34,10 @@ function prepareCanvas()
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
     canvas.addEventListener('mouseout', async () => {
-        let wasDrawing = drawing;
+    let wasDrawing = drawing;
 	drawing = false;
 
-    	await sleep(1100);
+   	await sleep(1100);
 	if (wasDrawing && !drawing) predict();
     });
     canvas.addEventListener('mousemove', (e) => {
@@ -143,12 +142,12 @@ async function predict()
     
     tf.engine().startScope();
     const toPredict = tf.browser.fromPixels(canvas)
-    .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-    .mean(2)
-    .expandDims()
-    .expandDims(3)
-    .toFloat()
-    .div(255.0);
+        .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
+        .mean(2)
+        .expandDims()
+        .expandDims(3)
+        .toFloat()
+        .div(255.0);
     
     const prediction = model.predict(toPredict).dataSync();
     
@@ -177,7 +176,7 @@ async function predict()
     const pipe = document.getElementById('pipeline');
 
     p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
-         canvasSize : window.innerWidth - resizeSub}px`;
+        canvasSize : window.innerWidth - resizeSub}px`;
     pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
         canvasSize : window.innerWidth - resizeSub}px`;
 
@@ -189,7 +188,7 @@ async function predict()
 	if (isModelLoaded)
         p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
 
-	p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
+	    p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
              canvasSize : window.innerWidth - resizeSub}px`;
         pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
              canvasSize : window.innerWidth - resizeSub}px`;
