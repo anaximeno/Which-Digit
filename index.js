@@ -34,11 +34,11 @@ function prepareCanvas()
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
     canvas.addEventListener('mouseout', async () => {
-    let wasDrawing = drawing;
-	drawing = false;
+        let wasDrawing = drawing;
+	    drawing = false;
 
-   	await sleep(1100);
-	if (wasDrawing && !drawing) predict();
+   	    await sleep(1100);
+	    if (wasDrawing && !drawing && isModelLoaded) predict();
     });
     canvas.addEventListener('mousemove', (e) => {
         if (!drawing) return ;
@@ -53,7 +53,7 @@ function prepareCanvas()
         drawing = false;
 
         await sleep(700);
-        if (!drawing) predict();
+        if (!drawing && isModelLoaded) predict();
     });
 
     /* For touch screen */
@@ -92,7 +92,7 @@ function prepareCanvas()
         drawing = false;
 
         await sleep(550);
-        if (!drawing) predict();
+        if (!drawing && isModelLoaded) predict();
     });
 }
 
@@ -135,6 +135,9 @@ async function loadModel(path)
 
 async function predict()
 {
+    if (!isModelLoaded)
+        return ;
+
     const p = document.getElementById('predict-output');
     const canvas = document.getElementById('draw-canvas');
 
@@ -151,7 +154,7 @@ async function predict()
     
     const prediction = model.predict(toPredict).dataSync();
     
-    await sleep(350); // Intentional sleep!
+    await sleep(350);
 
     p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
     tf.engine().endScope();
@@ -185,8 +188,8 @@ async function predict()
         ctxSize = window.innerWidth > 280 ? 25 : 15;
 
         prepareCanvas();
-	if (isModelLoaded)
-        p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+	    if (isModelLoaded)
+            p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
 
 	    p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
              canvasSize : window.innerWidth - resizeSub}px`;
