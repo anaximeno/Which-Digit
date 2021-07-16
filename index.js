@@ -5,7 +5,7 @@ const IMAGE_SIZE = 28;
 let lastPosition = {x: 0, y: 0};
 let drawing = false;
 
-const canvasSize = 500;
+const canvasSize = 400;
 let ctx;
 let ctxSize = 28;
 let resizeSub = 25;
