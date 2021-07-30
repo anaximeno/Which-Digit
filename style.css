@@ -4,7 +4,15 @@
 }
 html {
     width: 100%;
-    height: 100%;
+    box-sizing: border-box;
+    overflow: auto;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
 }
 main {
     width: 100%;
@@ -60,7 +68,6 @@ h1 {
 #clear-btn {
     width: 100%;
 }
-
 .top-text {
     position: absolute;
     right: 0;
@@ -68,8 +75,6 @@ h1 {
     padding: 5px;
     font-family: 'Noto Sans JP', sans-serif;
 }
-
-
 canvas {
     /* Prevent nearby text being highlighted when accidentally dragging mouse outside confines of the canvas */
     -webkit-touch-callout: none;

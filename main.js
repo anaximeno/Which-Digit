@@ -1,23 +1,27 @@
 let model;
 let isModelLoaded = false;
 const IMAGE_SIZE = 28;
+const MODEL_PATH = './tfjs/DigitRec/model.json';
 
 let lastPosition = {x: 0, y: 0};
 let drawing = false;
 
 const canvasSize = 400;
 let ctx;
-let ctxSize = 28;
 let resizeSub = 25;
 
-function sleep (milisecs)
+
+function sleep(milisecs)
 {
+    // Stops the execution by 'milisecs' miliseconds.
     return new Promise(resolve => setTimeout(resolve, milisecs));
 }
 
-function prepareCanvas()
+function prepareCanvas(ctxSize = 28)
 {
+    // Get the canvas element
     const canvas = document.getElementById('draw-canvas');
+    // The witdh and height can be resized if the window's width is less than the canvasSize
     canvas.width = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
     canvas.height = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth  - resizeSub;
 
@@ -28,20 +32,21 @@ function prepareCanvas()
     ctx.lineCap = 'round';
     ctx.lineWidth = ctxSize;
 
-    /* For the Laptop / Desktop Computer */
+    /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
         drawing = true;
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
     canvas.addEventListener('mouseout', async () => {
         let wasDrawing = drawing;
-	    drawing = false;
+        drawing = false;
 
-   	    await sleep(1100);
-	    if (wasDrawing && !drawing && isModelLoaded) predict();
+        await sleep(1100);
+        if (wasDrawing && !drawing && isModelLoaded) predict();
     });
     canvas.addEventListener('mousemove', (e) => {
-        if (!drawing) return ;
+        if (!drawing)
+            return ;
 
         ctx.beginPath();
         ctx.moveTo(lastPosition.x, lastPosition.y);
@@ -53,35 +58,31 @@ function prepareCanvas()
         drawing = false;
 
         await sleep(700);
-        if (!drawing && isModelLoaded) predict();
+        if (!drawing && isModelLoaded)
+            predict();
     });
 
-    /* For touch screen */
+    /** Touch events for touch devices. */
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-    	
+        drawing = true;
         let clientRect = canvas.getBoundingClientRect();
         let touch = e.touches[0];
-
-        drawing = true;
-
         let x = touch.pageX - clientRect.x;
         let y = touch.pageY - clientRect.y;
-
         lastPosition = { x, y };
     });
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
         
-        if (!drawing) return ;
+        // If not drawing stop the execution of this funtion here.
+        if (!drawing)
+            return ;
 
         let clientRect = canvas.getBoundingClientRect();
         let touch = e.touches[0];
-
-        
         let x = touch.pageX - clientRect.x;
         let y = touch.pageY - clientRect.y;
-    
         ctx.beginPath();
         ctx.moveTo(lastPosition.x, lastPosition.y);
         ctx.lineTo(x, y);
@@ -90,9 +91,10 @@ function prepareCanvas()
     });
     canvas.addEventListener('touchend', async () => {
         drawing = false;
-
-        await sleep(550);
-        if (!drawing && isModelLoaded) predict();
+        // Sleeps for some miliseconds and if not drawing predict the image in canvas
+        await sleep(600);
+        if (!drawing && isModelLoaded)
+            predict();
     });
 }
 
@@ -109,41 +111,46 @@ function createButton(innerText, selector, id, listener, disabled = false) {
 
 function enableButton(selector)
 {
+    // Activates a button
     document.getElementById(selector).disabled = false;
 }
 
 
 function disableButton(selector)
 {
+    // Disables a button
     document.getElementById(selector).disabled = true;
 }
 
 
-async function loadModel(path)
+async function loadModel()
 {
-    model = await tf.loadLayersModel(path);
+    // Load the saved on MODEL_PATH and await the process to be complete
+    model = await tf.loadLayersModel(MODEL_PATH);
     isModelLoaded = true;
 
-    const p = document.getElementById("predict-output");
-
+    
     // Uncomment the line below if you want to see output on your browser console.
     // console.log("The model was loaded successfully!");
 
+    const p = document.getElementById("predict-output");
     p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
 }
 
 
 async function predict()
 {
+    // If the model isn't loaded stops the execution of this function here
     if (!isModelLoaded)
         return ;
 
     const p = document.getElementById('predict-output');
-    const canvas = document.getElementById('draw-canvas');
-
     p.innerText = 'Predicting...';
     
     tf.engine().startScope();
+    // Get the canvas element with the drawing
+    const canvas = document.getElementById('draw-canvas');
+    // Aplicate the preprocessing transformations for being able to be a valid input to the model
     const toPredict = tf.browser.fromPixels(canvas)
         .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
         .mean(2)
@@ -151,51 +158,47 @@ async function predict()
         .expandDims(3)
         .toFloat()
         .div(255.0);
-    
+    // Predict the data and return an array with the probability of all possible outputs
     const prediction = model.predict(toPredict).dataSync();
-    
-    await sleep(350);
-
+    // Set the prediction to the output with the max probability (greater value) and shows it to the user
     p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
     tf.engine().endScope();
 }
 
 
-(function init(){
-    const p = document.getElementById('predict-output');
-
-    if (window.innerWidth < 280)
-        ctxSize = 15;
-
-    prepareCanvas();
-
+/** Initial Function Called automatically */
+(function init() {
+    
+    // Prepares the canvas settings
+    prepareCanvas(window.innerWidth < 280 ? 15 : 28);
+    
+    // Create the clear button along with its event
     createButton('Clear', '#pipeline', 'clear-btn', () => {
         ctx.clearRect(0, 0, canvasSize, canvasSize);
-
+        
         if (isModelLoaded)
             p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
     });
-
+    
+    // Resize the elements pipeline and predict-output
+    const p = document.getElementById('predict-output');
     const pipe = document.getElementById('pipeline');
+    let size = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
+    p.style.width = `${size}px`;
+    pipe.style.width = `${size}px`;
 
-    p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
-        canvasSize : window.innerWidth - resizeSub}px`;
-    pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
-        canvasSize : window.innerWidth - resizeSub}px`;
-
-
+    /** When resizing the window some other elements must be resized also */
     window.addEventListener('resize', () => {
-        ctxSize = window.innerWidth > 280 ? 25 : 15;
-
-        prepareCanvas();
-	    if (isModelLoaded)
+        prepareCanvas(window.innerWidth < 280 ? 15 : 28);
+        
+        if (isModelLoaded)
             p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
 
-	    p.style.width = `${window.innerWidth > canvasSize + resizeSub ?
-             canvasSize : window.innerWidth - resizeSub}px`;
-        pipe.style.width = `${window.innerWidth > canvasSize + resizeSub ?
-             canvasSize : window.innerWidth - resizeSub}px`;
+        size = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
+        p.style.width = `${size}px`;
+        pipe.style.width = `${size}px`;
     });
 
-    loadModel('./tfjs/DigitRec/model.json');
+    // Load the model at last
+    loadModel();
 })();
