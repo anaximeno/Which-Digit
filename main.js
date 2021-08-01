@@ -12,8 +12,10 @@ const RESIZE_SUB_FACTOR = 30;
 let ctx;
 
 
-const canvasSize = () => {
-    return window.innerWidth > MAX_CANVAS_SIZE + RESIZE_SUB_FACTOR ? MAX_CANVAS_SIZE : window.innerWidth - RESIZE_SUB_FACTOR;
+function canvasSize() {
+    let size = window.outerWidth > (MAX_CANVAS_SIZE + RESIZE_SUB_FACTOR) ? 
+        MAX_CANVAS_SIZE : (window.outerWidth - RESIZE_SUB_FACTOR);
+    return size;
 }
 
 
@@ -149,7 +151,7 @@ async function loadModel()
     // console.log("The model was loaded successfully!");
 
     const p = document.getElementById("predict-output");
-    p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+    p.innerHTML = 'Draw any digit between <strong>0</strong> to <strong>9</strong>.';
 }
 
 
@@ -184,26 +186,25 @@ async function predict()
 /** Automatic call to function init */
 (function init() {
     // Prepares the canvas to be used
-    prepareCanvas();
+    prepareCanvas();  
     
+    const p = document.getElementById('predict-output');
+    const pipe = document.getElementById('pipeline'); 
+    p.style.width = pipe.style.width = `${canvasSize()}px`;
+
     // Create the clear button along with its event
     createButton('Clear', '#pipeline', 'clear-btn', () => {
         ctx.clearRect(0, 0, canvasSize(), canvasSize());
         if (isModelLoaded)
-            p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+            p.innerHTML = 'Draw any digit between <strong>0</strong> to <strong>9</strong>.';
     });
-
-    // Resize the elements: pipeline and predict-output
-    const p = document.getElementById('predict-output');
-    const pipe = document.getElementById('pipeline');
-    p.style.width = pipe.style.width = `${canvasSize()}px`;
 
     /** When resizing the window some other elements must be resized also */
     window.addEventListener('resize', () => {
         p.style.width = pipe.style.width = `${canvasSize()}px`;
         resizeCanvas();
         if (isModelLoaded)
-            p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
+            p.innerHTML = 'Draw any digit between <strong>0</strong> to <strong>9</strong>.';
     });
 
     // Load the model at last
