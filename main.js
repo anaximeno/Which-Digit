@@ -6,9 +6,15 @@ const MODEL_PATH = './tfjs/DigitRec/model.json';
 let lastPosition = {x: 0, y: 0};
 let drawing = false;
 
-const canvasSize = 400;
+const MAX_CANVAS_SIZE = 400;
+const MAX_CTX_SIZE = 28;
+const RESIZE_SUB_FACTOR = 30;
 let ctx;
-let resizeSub = 25;
+
+
+const canvasSize = () => {
+    return window.innerWidth > MAX_CANVAS_SIZE + RESIZE_SUB_FACTOR ? MAX_CANVAS_SIZE : window.innerWidth - RESIZE_SUB_FACTOR;
+}
 
 
 function sleep(milisecs)
@@ -17,20 +23,29 @@ function sleep(milisecs)
     return new Promise(resolve => setTimeout(resolve, milisecs));
 }
 
-function prepareCanvas(ctxSize = 28)
+
+function resizeCanvas()
 {
     // Get the canvas element
     const canvas = document.getElementById('draw-canvas');
-    // The witdh and height can be resized if the window's width is less than the canvasSize
-    canvas.width = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
-    canvas.height = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth  - resizeSub;
-
+    // Set the width and the height to the better possible size
+    canvas.width = canvas.height = canvasSize();
+    
     ctx = canvas.getContext('2d');
     ctx.strokeStyle = 'white';
     ctx.fillStyle = 'white';
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.lineWidth = ctxSize;
+    ctx.lineWidth = window.innerWidth > 280 ? MAX_CTX_SIZE : 15;
+}
+
+
+function prepareCanvas()
+{
+    // Get the canvas element
+    const canvas = document.getElementById('draw-canvas');
+    // Resize the canvas element
+    resizeCanvas();
 
     /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
@@ -57,7 +72,7 @@ function prepareCanvas(ctxSize = 28)
     canvas.addEventListener('mouseup', async () => {
         drawing = false;
 
-        await sleep(700);
+        await sleep(650);
         if (!drawing && isModelLoaded)
             predict();
     });
@@ -166,37 +181,29 @@ async function predict()
 }
 
 
-/** Initial Function Called automatically */
+/** Automatic call to function init */
 (function init() {
-    
-    // Prepares the canvas settings
-    prepareCanvas(window.innerWidth < 280 ? 15 : 28);
+    // Prepares the canvas to be used
+    prepareCanvas();
     
     // Create the clear button along with its event
     createButton('Clear', '#pipeline', 'clear-btn', () => {
-        ctx.clearRect(0, 0, canvasSize, canvasSize);
-        
+        ctx.clearRect(0, 0, canvasSize(), canvasSize());
         if (isModelLoaded)
             p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
     });
-    
-    // Resize the elements pipeline and predict-output
+
+    // Resize the elements: pipeline and predict-output
     const p = document.getElementById('predict-output');
     const pipe = document.getElementById('pipeline');
-    let size = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
-    p.style.width = `${size}px`;
-    pipe.style.width = `${size}px`;
+    p.style.width = pipe.style.width = `${canvasSize()}px`;
 
     /** When resizing the window some other elements must be resized also */
     window.addEventListener('resize', () => {
-        prepareCanvas(window.innerWidth < 280 ? 15 : 28);
-        
+        p.style.width = pipe.style.width = `${canvasSize()}px`;
+        resizeCanvas();
         if (isModelLoaded)
             p.innerHTML = 'Try to draw any digit between <strong>0</strong> to <strong>9</strong>.';
-
-        size = window.innerWidth > canvasSize + resizeSub ? canvasSize : window.innerWidth - resizeSub;
-        p.style.width = `${size}px`;
-        pipe.style.width = `${size}px`;
     });
 
     // Load the model at last
