@@ -6,11 +6,15 @@ const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9<
 
 let lastPosition = {x: 0, y: 0};
 let drawing = false;
+let stopPredict = false;
+let ctx;
 
 const MAX_CANVAS_SIZE = 400;
 const MAX_CTX_SIZE = 22;
 const RESIZE_SUB_FACTOR = 30;
-let ctx;
+const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1000;
+const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1200;
+const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
 
 
 function min(a, b, ...args)
@@ -75,12 +79,13 @@ function prepareCanvas()
     /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
         drawing = true;
+        stopPredict = false;
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
     canvas.addEventListener('mouseout', async () => {
         let wasDrawing = drawing;
         drawing = false;
-        await sleep(1100);
+        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT);
         if (wasDrawing && !drawing && isModelLoaded)
             predict();
     });
@@ -95,7 +100,7 @@ function prepareCanvas()
     });
     canvas.addEventListener('mouseup', async () => {
         drawing = false;
-        await sleep(650);
+        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
         if (!drawing && isModelLoaded)
             predict();
     });
@@ -104,6 +109,7 @@ function prepareCanvas()
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         drawing = true;
+        stopPredict = false;
         let clientRect = canvas.getBoundingClientRect();
         let touch = e.touches[0];
         let x = touch.pageX - clientRect.x;
@@ -129,8 +135,7 @@ function prepareCanvas()
     });
     canvas.addEventListener('touchend', async () => {
         drawing = false;
-        // Sleeps for some miliseconds and if not drawing predict the image in canvas
-        await sleep(600);
+        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
         if (!drawing && isModelLoaded)
             predict();
     });
@@ -182,8 +187,16 @@ async function predict()
         return ;
 
     const p = document.getElementById('predict-output');
-    p.innerText = 'Predicting...';
-    await sleep(350);
+    p.innerText = 'Wait...';
+    disableButton('clear-btn');
+    
+    await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
+    if (stopPredict === true) {
+        stopPredict = false;
+        enableButton('clear-btn');
+        p.innerHTML = INITIAL_MESSAGE;
+        return ;
+    }
 
     tf.engine().startScope();
     // Get the canvas element with the drawing
@@ -197,6 +210,8 @@ async function predict()
     // Set the prediction to the output with the max probability (greater value) and shows it to the user
     p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
     tf.engine().endScope();
+
+    enableButton('clear-btn');
 }
 
 
@@ -211,6 +226,7 @@ async function predict()
 
     // Create the clear button along with its event
     createButton('Clear', '#pipeline', 'clear-btn', () => {
+        stopPredict = true;
         let size = getCanvasSize();
         ctx.clearRect(0, 0, size, size);
         if (isModelLoaded)

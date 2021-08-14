@@ -73,6 +73,7 @@ h1 {
     border-color: #222;
     border-radius: 5px;
     color: white;
+    text-shadow: 0 0 1px white;
 }
 #clear-btn {
     width: 100%;
@@ -81,7 +82,16 @@ h1 {
     cursor: pointer;
 }
 #clear-btn:active {
+    text-shadow: none;
     background-color: rgba(17, 17, 17, 0.938);
+}
+#clear-btn:disabled {
+    background-color: rgb(39, 39, 39);
+    border-color: rgb(39, 39, 39);
+    color: rgba(255, 255, 255, 0.418);
+    text-shadow: none;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 .top-text {
     position: absolute;
