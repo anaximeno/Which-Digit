@@ -12,7 +12,7 @@ const RESIZE_SUB_FACTOR = 30;
 let ctx;
 
 
-function canvasSize(maxsize = MAX_CANVAS_SIZE)
+function getCanvasSize(maxsize = MAX_CANVAS_SIZE)
 {
     let size = window.outerWidth > (maxsize + RESIZE_SUB_FACTOR) ?
         maxsize : (window.outerWidth - RESIZE_SUB_FACTOR);
@@ -20,7 +20,7 @@ function canvasSize(maxsize = MAX_CANVAS_SIZE)
 }
 
 
-function ctxSize(maxsize = MAX_CTX_SIZE)
+function getCtxSize(maxsize = MAX_CTX_SIZE)
 {
     let size = window.outerWidth > 280 ? maxsize : 15;
     return size;
@@ -39,13 +39,13 @@ function resizeCanvas()
     // Get the canvas element
     const canvas = document.getElementById('draw-canvas');
     // Set the width and the height to the better possible size
-    canvas.width = canvas.height = canvasSize(MAX_CANVAS_SIZE);
+    canvas.width = canvas.height = getCanvasSize(MAX_CANVAS_SIZE);
     ctx = canvas.getContext('2d');
     ctx.strokeStyle = 'white';
     ctx.fillStyle = 'white';
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.lineWidth = ctxSize(MAX_CTX_SIZE);
+    ctx.lineWidth = getCtxSize(MAX_CTX_SIZE);
 }
 
 
@@ -151,7 +151,6 @@ async function loadModel()
     model = await tf.loadLayersModel(MODEL_PATH);
     isModelLoaded = true;
 
-
     // Uncomment the line below if you want to see output on your browser console.
     // console.log("The model was loaded successfully!");
 
@@ -175,7 +174,7 @@ async function predict()
     // Aplicate the preprocessing transformations for being able to be a valid input to the model
     const toPredict = tf.browser.fromPixels(canvas)
     	.resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-	.mean(2).expandDims().expandDims(3).toFloat().div(255.0);
+	    .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
     // Predict the data and return an array with the probability of all possible outputs
     const prediction = model.predict(toPredict).dataSync();
     // Set the prediction to the output with the max probability (greater value) and shows it to the user
@@ -191,18 +190,18 @@ async function predict()
 
     const p = document.getElementById('predict-output');
     const pipe = document.getElementById('pipeline');
-    p.style.width = pipe.style.width = `${canvasSize(MAX_CANVAS_SIZE)}px`;
+    p.style.width = pipe.style.width = `${getCanvasSize(MAX_CANVAS_SIZE)}px`;
 
     // Create the clear button along with its event
     createButton('Clear', '#pipeline', 'clear-btn', () => {
-        ctx.clearRect(0, 0, canvasSize(MAX_CANVAS_SIZE), canvasSize(MAX_CANVAS_SIZE));
+        ctx.clearRect(0, 0, getCanvasSize(MAX_CANVAS_SIZE), getCanvasSize(MAX_CANVAS_SIZE));
         if (isModelLoaded)
             p.innerHTML = 'Draw any digit between <strong>0</strong> to <strong>9</strong>.';
     });
 
     /** When resizing the window some other elements must be resized also */
     window.addEventListener('resize', () => {
-        p.style.width = pipe.style.width = `${canvasSize(MAX_CANVAS_SIZE)}px`;
+        p.style.width = pipe.style.width = `${getCanvasSize(MAX_CANVAS_SIZE)}px`;
         resizeCanvas();
         if (isModelLoaded)
             p.innerHTML = 'Draw any digit between <strong>0</strong> to <strong>9</strong>.';
