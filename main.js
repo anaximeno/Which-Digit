@@ -6,7 +6,8 @@ const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9<
 
 let lastPosition = {x: 0, y: 0};
 let drawing = false;
-let stopPredict = false;
+let stopPrediction = false;
+let haveAlreadyPredicted = false;
 let ctx;
 
 const MAX_CANVAS_SIZE = 400;
@@ -16,6 +17,7 @@ const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
 const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
+
 
 
 function min(a, b, ...args)
@@ -78,7 +80,8 @@ function prepareCanvas()
     /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
         drawing = true;
-        stopPredict = false;
+        stopPrediction = false;
+        haveAlreadyPredicted = false;
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
 
@@ -110,9 +113,12 @@ function prepareCanvas()
 
     /** Touch events for touch devices. */
     canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
         drawing = true;
-        stopPredict = false;
+        haveAlreadyPredicted = false;
+        stopPrediction = false;
+
+        e.preventDefault();
+
         let clientRect = canvas.getBoundingClientRect();
         let touch = e.touches[0];
         let x = touch.pageX - clientRect.x;
@@ -187,41 +193,64 @@ async function loadModel()
 
 async function predict()
 {
-    // If the model isn't loaded stops the execution of this function here
-    if (!isModelLoaded || drawing)
-        return ;
-
+    const numberTranscription = {
+        0: 'Zero',
+        1: 'One',
+        2: 'Two',
+        3: 'Three',
+        4: 'Four',
+        5: 'Five',
+        6: 'Six',
+        7: 'Seven',
+        8: 'Eight',
+        9: 'Nine'
+    }
     const p = document.getElementById('predict-output');
-    p.innerText = 'Wait...';
-    disableButton('clear-btn');
 
-    await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
-    if (stopPredict || drawing)
+    if (isModelLoaded === false || drawing === true)
+        return ;
+    else
+        disableButton('clear-btn');
+
+    // HaveAlreadyPredicted prevents showing the same prediction to be predicted again
+    if (haveAlreadyPredicted === false)
     {
-        stopPredict = false;
+        p.innerText = 'Wait...';
+        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
+    } else 
+        haveAlreadyPredicted = false;
+
+
+    if (stopPrediction === true)
+    {
+        stopPrediction = false;
         enableButton('clear-btn');
         p.innerHTML = INITIAL_MESSAGE;
-        return ;
+    } else {
+        // Prevents the etreme usage of gpu
+        tf.engine().startScope();
+
+        const canvas = document.getElementById('draw-canvas');
+    
+        // Aplicate the preprocessing transformations to be a valid input to the model
+        const toPredict = tf.browser.fromPixels(canvas)
+            .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
+            .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
+    
+        // Predict the data and return an array with the probability of all possible outputs
+        const prediction = model.predict(toPredict).dataSync();
+    
+        // Set the prediction to the output with the max probability (greater value) and shows it to the user
+        const predictedValue = tf.argMax(prediction).dataSync();
+        p.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
+            ` (<strong>${numberTranscription[predictedValue]}</strong>)`;
+    
+        // Prevents the etreme usage of gpu
+        tf.engine().endScope();
+
+        enableButton('clear-btn');
+        haveAlreadyPredicted = true;
     }
-
-    tf.engine().startScope();
-
-    const canvas = document.getElementById('draw-canvas');
-
-    // Aplicate the preprocessing transformations to be a valid input to the model
-    const toPredict = tf.browser.fromPixels(canvas)
-        .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-        .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
-
-    // Predict the data and return an array with the probability of all possible outputs
-    const prediction = model.predict(toPredict).dataSync();
-
-    // Set the prediction to the output with the max probability (greater value) and shows it to the user
-    p.innerHTML = `The number drawn is <strong>${tf.argMax(prediction).dataSync()}</strong>`;
-
-    tf.engine().endScope();
-
-    enableButton('clear-btn');
 }
 
 
@@ -236,14 +265,13 @@ async function predict()
 
     // Create the clear button along with its event
     createButton('Clear', '#pipeline', 'clear-btn', () => {
-        stopPredict = true;
+        stopPrediction = true;
         let size = getCanvasSize();
         ctx.clearRect(0, 0, size, size);
         if (isModelLoaded)
             p.innerHTML = INITIAL_MESSAGE;
     });
 
-    /** When resizing the window some other elements must be resized also */
     window.addEventListener('resize', () => {
         p.style.width = pipe.style.width = `${getCanvasSize()}px`;
 
