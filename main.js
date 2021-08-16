@@ -11,9 +11,10 @@ let ctx;
 
 const MAX_CANVAS_SIZE = 400;
 const MAX_CTX_SIZE = 22;
-const RESIZE_SUB_FACTOR = 30;
-const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1000;
-const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1200;
+const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
+const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
+const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
+const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
 const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
 
 
@@ -32,18 +33,16 @@ function min(a, b, ...args)
 
 function getCanvasSize()
 {
-    let win_size = min(window.innerWidth, window.outerWidth);
-    let size = win_size > (MAX_CANVAS_SIZE + RESIZE_SUB_FACTOR) ?
-        MAX_CANVAS_SIZE : (win_size - RESIZE_SUB_FACTOR);
+    const WINDOW_SIZE = min(window.innerWidth, window.outerWidth);
+    let size = WINDOW_SIZE > (MAX_CANVAS_SIZE + CANVAS_RESIZE_SUBTRACT_VALUE) ?
+        MAX_CANVAS_SIZE : (WINDOW_SIZE - CANVAS_RESIZE_SUBTRACT_VALUE);
     return size;
 }
 
 
 function getCtxSize()
 {
-    let win_size = min(window.innerWidth, window.outerWidth);
-    let size = win_size > 280 ? MAX_CTX_SIZE : win_size/15;
-    return size;
+    return getCanvasSize() / CTX_SCALE_DIVISOR_VALUE;
 }
 
 
@@ -82,6 +81,7 @@ function prepareCanvas()
         stopPredict = false;
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
+
     canvas.addEventListener('mouseout', async () => {
         let wasDrawing = drawing;
         drawing = false;
@@ -89,6 +89,7 @@ function prepareCanvas()
         if (wasDrawing && !drawing && isModelLoaded)
             predict();
     });
+
     canvas.addEventListener('mousemove', (e) => {
         if (!drawing)
             return ;
@@ -98,12 +99,14 @@ function prepareCanvas()
         ctx.stroke();
         lastPosition = { x: e.offsetX, y: e.offsetY };
     });
+
     canvas.addEventListener('mouseup', async () => {
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
         if (!drawing && isModelLoaded)
             predict();
     });
+
 
     /** Touch events for touch devices. */
     canvas.addEventListener('touchstart', (e) => {
@@ -116,10 +119,10 @@ function prepareCanvas()
         let y = touch.pageY - clientRect.y;
         lastPosition = { x, y };
     });
+
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
 
-        // If not drawing stop the execution of this funtion here.
         if (!drawing)
             return ;
 
@@ -133,6 +136,7 @@ function prepareCanvas()
         ctx.stroke();
         lastPosition = { x, y };
     });
+
     canvas.addEventListener('touchend', async () => {
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
@@ -142,7 +146,8 @@ function prepareCanvas()
 }
 
 
-function createButton(innerText, selector, id, listener, disabled = false) {
+function createButton(innerText, selector, id, listener, disabled = false)
+{
     const btn = document.createElement('BUTTON');
     btn.innerText = innerText;
     btn.id = id;
@@ -183,15 +188,16 @@ async function loadModel()
 async function predict()
 {
     // If the model isn't loaded stops the execution of this function here
-    if (!isModelLoaded)
+    if (!isModelLoaded || drawing)
         return ;
 
     const p = document.getElementById('predict-output');
     p.innerText = 'Wait...';
     disableButton('clear-btn');
-    
+
     await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
-    if (stopPredict === true) {
+    if (stopPredict || drawing)
+    {
         stopPredict = false;
         enableButton('clear-btn');
         p.innerHTML = INITIAL_MESSAGE;
@@ -199,16 +205,20 @@ async function predict()
     }
 
     tf.engine().startScope();
-    // Get the canvas element with the drawing
+
     const canvas = document.getElementById('draw-canvas');
-    // Aplicate the preprocessing transformations for being able to be a valid input to the model
+
+    // Aplicate the preprocessing transformations to be a valid input to the model
     const toPredict = tf.browser.fromPixels(canvas)
         .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
         .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
+
     // Predict the data and return an array with the probability of all possible outputs
     const prediction = model.predict(toPredict).dataSync();
+
     // Set the prediction to the output with the max probability (greater value) and shows it to the user
-    p.innerHTML = `The Predicted value is: <strong>${tf.argMax(prediction).dataSync()}</strong>`;
+    p.innerHTML = `The number drawn is <strong>${tf.argMax(prediction).dataSync()}</strong>`;
+
     tf.engine().endScope();
 
     enableButton('clear-btn');
@@ -236,7 +246,9 @@ async function predict()
     /** When resizing the window some other elements must be resized also */
     window.addEventListener('resize', () => {
         p.style.width = pipe.style.width = `${getCanvasSize()}px`;
+
         resizeCanvas();
+
         if (isModelLoaded)
             p.innerHTML = INITIAL_MESSAGE;
     });
