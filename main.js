@@ -281,10 +281,6 @@ async function predict()
             p.innerHTML = INITIAL_MESSAGE;
     });
 
-    window.addEventListener('focus', () => {
-        resizeCanvas();
-    });
-
     // Load the model at last
     loadModel();
 })();
