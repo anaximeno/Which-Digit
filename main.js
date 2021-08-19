@@ -4,7 +4,7 @@ const IMAGE_SIZE = 28;
 const MODEL_PATH = './tfjs/DigitRec/model.json';
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 
-let lastPosition = {x: 0, y: 0};
+let lastPosition = { x: 0, y: 0 }
 let drawing = false;
 let stopPrediction = false;
 let haveAlreadyPredicted = false;
@@ -35,9 +35,13 @@ function min(a, b, ...args)
 
 function getCanvasSize()
 {
-    const WINDOW_SIZE = min(window.innerWidth, window.outerWidth);
+    // Prevents some errors when resizing the canvas
+    const WINDOW_SIZE = window.outerWidth > 0  ?
+        min(window.innerWidth, window.outerWidth) : window.innerWidth;
+
     let size = WINDOW_SIZE > (MAX_CANVAS_SIZE + CANVAS_RESIZE_SUBTRACT_VALUE) ?
         MAX_CANVAS_SIZE : (WINDOW_SIZE - CANVAS_RESIZE_SUBTRACT_VALUE);
+
     return size;
 }
 
@@ -60,7 +64,9 @@ function resizeCanvas()
     // Get the canvas element
     const canvas = document.getElementById('draw-canvas');
     // Set the width and the height to the better possible size
-    canvas.width = canvas.height = getCanvasSize();
+    let size = getCanvasSize();
+    canvas.width = size;
+    canvas.height = size;
     ctx = canvas.getContext('2d');
     ctx.strokeStyle = 'white';
     ctx.fillStyle = 'white';
@@ -186,8 +192,8 @@ async function loadModel()
     // Uncomment the line below if you want to see output on your browser console.
     // console.log("The model was loaded successfully!");
 
-    const p = document.getElementById("predict-output");
-    p.innerHTML = INITIAL_MESSAGE;
+    const output = document.getElementById("predict-output");
+    output.innerHTML = INITIAL_MESSAGE;
 }
 
 
@@ -205,7 +211,7 @@ async function predict()
         8: 'Eight',
         9: 'Nine'
     }
-    const p = document.getElementById('predict-output');
+    const output = document.getElementById('predict-output');
 
     if (isModelLoaded === false || drawing === true)
         return ;
@@ -215,9 +221,9 @@ async function predict()
     // HaveAlreadyPredicted prevents showing the same prediction to be predicted again
     if (haveAlreadyPredicted === false)
     {
-        p.innerText = 'Wait...';
+        output.innerText = 'Wait...';
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
-    } else 
+    } else
         haveAlreadyPredicted = false;
 
 
@@ -225,26 +231,26 @@ async function predict()
     {
         stopPrediction = false;
         enableButton('clear-btn');
-        p.innerHTML = INITIAL_MESSAGE;
+        output.innerHTML = INITIAL_MESSAGE;
     } else {
         // Prevents the etreme usage of gpu
         tf.engine().startScope();
 
         const canvas = document.getElementById('draw-canvas');
-    
+
         // Aplicate the preprocessing transformations to be a valid input to the model
         const toPredict = tf.browser.fromPixels(canvas)
             .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
             .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
-    
+
         // Predict the data and return an array with the probability of all possible outputs
         const prediction = model.predict(toPredict).dataSync();
-    
+
         // Set the prediction to the output with the max probability (greater value) and shows it to the user
         const predictedValue = tf.argMax(prediction).dataSync();
-        p.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
+        output.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
             ` (<strong>${numberTranscription[predictedValue]}</strong>)`;
-    
+
         // Prevents the etreme usage of gpu
         tf.engine().endScope();
 
@@ -254,33 +260,40 @@ async function predict()
 }
 
 
-/** Automatic call to function init */
-(function init() {
-    // Prepares the canvas to be used
-    prepareCanvas();
+(function init(message)
+    {
+        // Prepares the canvas to be used
+        prepareCanvas();
 
-    const p = document.getElementById('predict-output');
-    const pipe = document.getElementById('pipeline');
-    p.style.width = pipe.style.width = `${getCanvasSize()}px`;
+        const clearBtn = document.getElementById('clear-btn');
+        const output = document.getElementById('predict-output');
+        const pipe = document.getElementById('pipeline');
 
-    // Create the clear button along with its event
-    createButton('Clear', '#pipeline', 'clear-btn', () => {
-        stopPrediction = true;
-        let size = getCanvasSize();
-        ctx.clearRect(0, 0, size, size);
-        if (isModelLoaded)
-            p.innerHTML = INITIAL_MESSAGE;
-    });
+        let width = `${getCanvasSize()}px`;
+        output.style.width = width;
+        pipe.style.width = width;
 
-    window.addEventListener('resize', () => {
-        p.style.width = pipe.style.width = `${getCanvasSize()}px`;
+        clearBtn.addEventListener('click', () => {
+            let size = getCanvasSize();
+            ctx.clearRect(0, 0, size, size);
+            if (isModelLoaded)
+                output.innerHTML = INITIAL_MESSAGE;
+            stopPrediction = true;
+        });
 
-        resizeCanvas();
+        window.addEventListener('resize', () => {
+            width = `${getCanvasSize()}px`;
+            output.style.width = width;
+            pipe.style.width = width;
 
-        if (isModelLoaded)
-            p.innerHTML = INITIAL_MESSAGE;
-    });
+            resizeCanvas();
 
-    // Load the model at last
-    loadModel();
-})();
+            if (isModelLoaded)
+                output.innerHTML = INITIAL_MESSAGE;
+        });
+
+        console.log(message);
+        // Load the model at last
+        loadModel();
+    }
+)('Welcome to the Digit Recognition Web App!');

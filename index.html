@@ -59,15 +59,16 @@
 </head>
 <body>
     <main>
+        <h1>Handwritten Digits Recognition App</h1>
         <div class="box">
-            <h1>Handwritten Digits Recognition App</h1>
-            <div id="predict-output">Loading Model...</div>
+            <div id="predict-output" width="400" >Loading Model...</div>
             <canvas id="draw-canvas" class="digits-canvas" width="400" height="400"></canvas>
-            <div id="pipeline"></div>
         </div>
+        <div id="pipeline">
+            <button id="clear-btn" width="400">Clear</button>
+        </div>
+        <script src="./main.js" type="module" async></script>
     </main>
-
-    <div class="top-text">by: Anaxímeno Brito</div>
-    <script src="./main.js" type="module"></script>
+    <div class="top-text"><a href="https://github.com/anaximeno">by: Anaxímeno Brito</a></div>
 </body>
 </html>
