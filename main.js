@@ -17,32 +17,55 @@ const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
 const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
+const PAGE_RESIZE_ADD_VALUE = 200;
 
 
 
-function min(a, b, ...args)
+function min(...args)
 {
-    let minValue;
-    if (args.length > 0) {
-        args.push(a, b);
-        args.sort();
-        minValue = args[0];
-    } else {
-        minValue = a < b ? a : b;
-    }
-    return minValue;
+    if (args.length < 2)
+        throw Error('At least 2 elements are required for calculating the minimum!');
+    let minimun = args[0];
+    for (let i = 1 ; i < args.length ; ++i)
+        minimun = minimun > args[i] ? args[i] : minimun;
+    return minimun;
 }
+
+
+function max(...args)
+{
+    if (args.length < 2)
+        throw Error('At least 2 elements are required for calculating the maximum!');
+    let maximum = args[0];
+    for (let i = 1 ; i < args.length ; ++i)
+        maximum = maximum < args[i] ? args[i] : maximum;
+    return maximum;
+}
+
+function resizePage()
+{
+    const main = document.getElementsByTagName('html')[0];
+    const clear_height = 45;
+    const output_height = 40;
+
+    const summed_height = clear_height + output_height + getCanvasSize() + PAGE_RESIZE_ADD_VALUE;
+
+    const height = max(window.innerHeight, summed_height);
+    main.style.height = height + 'px';
+    return height;
+}
+
 
 function getCanvasSize()
 {
     // Prevents some errors when resizing the canvas
-    const WINDOW_SIZE = window.outerWidth > 0  ?
+    const window_width = window.outerWidth > 0  ?
         min(window.innerWidth, window.outerWidth) : window.innerWidth;
 
-    let size = WINDOW_SIZE > (MAX_CANVAS_SIZE + CANVAS_RESIZE_SUBTRACT_VALUE) ?
-        MAX_CANVAS_SIZE : (WINDOW_SIZE - CANVAS_RESIZE_SUBTRACT_VALUE);
+    const width = window_width > (MAX_CANVAS_SIZE + CANVAS_RESIZE_SUBTRACT_VALUE) ?
+        MAX_CANVAS_SIZE : (window_width - CANVAS_RESIZE_SUBTRACT_VALUE);
 
-    return size;
+    return width;
 }
 
 
@@ -264,6 +287,7 @@ async function predict()
     {
         // Prepares the canvas to be used
         prepareCanvas();
+        resizePage();
 
         const clearBtn = document.getElementById('clear-btn');
         const output = document.getElementById('predict-output');
@@ -287,6 +311,7 @@ async function predict()
             pipe.style.width = width;
 
             resizeCanvas();
+            resizePage();
 
             if (isModelLoaded)
                 output.innerHTML = INITIAL_MESSAGE;
