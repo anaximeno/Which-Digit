@@ -1,7 +1,7 @@
 let model;
 let isModelLoaded = false;
 const IMAGE_SIZE = 28;
-const MODEL_PATH = './tfjs/DigitRec/model.json';
+const MODEL_PATH = './tfjs/Compiled/model.json';
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 
 let lastPosition = { x: 0, y: 0 }
