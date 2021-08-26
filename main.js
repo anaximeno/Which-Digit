@@ -1,13 +1,14 @@
 let model;
 let isModelLoaded = false;
 const IMAGE_SIZE = 28;
-const MODEL_PATH = './tfjs/Compiled/model.json';
+const MODEL_PATH = 'tfjs/Compiled/model.json';
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 
-let lastPosition = { x: 0, y: 0 }
+let lastPosition = { x: 0, y: 0 };
 let drawing = false;
 let stopPrediction = false;
 let haveAlreadyPredicted = false;
+let canvas;
 let ctx;
 
 const MAX_CANVAS_SIZE = 400;
@@ -18,7 +19,18 @@ const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
 const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
 const PAGE_RESIZE_ADD_VALUE = 200;
-
+const NUMBER_TO_WORD = {
+    0: 'Zero',
+    1: 'One',
+    2: 'Two',
+    3: 'Three',
+    4: 'Four',
+    5: 'Five',
+    6: 'Six',
+    7: 'Seven',
+    8: 'Eight',
+    9: 'Nine'
+}
 
 
 function min(...args)
@@ -50,9 +62,7 @@ function resizePage()
 
     const summed_height = clear_height + output_height + getCanvasSize() + PAGE_RESIZE_ADD_VALUE;
 
-    const height = max(window.innerHeight, summed_height);
-    main.style.height = height + 'px';
-    return height;
+    main.style.height = max(window.innerHeight, summed_height)+'px';
 }
 
 
@@ -108,6 +118,10 @@ function prepareCanvas()
 
     /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
+        
+        if (!isModelLoaded)
+            return ;
+
         drawing = true;
         stopPrediction = false;
         haveAlreadyPredicted = false;
@@ -118,7 +132,7 @@ function prepareCanvas()
         let wasDrawing = drawing;
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT);
-        if (wasDrawing && !drawing && isModelLoaded)
+        if (isModelLoaded && wasDrawing && !drawing)
             predict();
     });
 
@@ -133,20 +147,24 @@ function prepareCanvas()
     });
 
     canvas.addEventListener('mouseup', async () => {
+        let wasDrawing = drawing;
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
-        if (!drawing && isModelLoaded)
+        if (isModelLoaded && wasDrawing && !drawing)
             predict();
     });
 
 
     /** Touch events for touch devices. */
     canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+
+        if (!isModelLoaded)
+            return ;
+
         drawing = true;
         haveAlreadyPredicted = false;
         stopPrediction = false;
-
-        e.preventDefault();
 
         let clientRect = canvas.getBoundingClientRect();
         let touch = e.touches[0];
@@ -173,9 +191,10 @@ function prepareCanvas()
     });
 
     canvas.addEventListener('touchend', async () => {
+        let wasDrawing = drawing;
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
-        if (!drawing && isModelLoaded)
+        if (isModelLoaded && wasDrawing && !drawing)
             predict();
     });
 }
@@ -210,30 +229,24 @@ async function loadModel()
 {
     // Load the saved on MODEL_PATH and await the process to be complete
     model = await tf.loadLayersModel(MODEL_PATH);
-    isModelLoaded = true;
+    isModelLoaded = false;
 
     // Uncomment the line below if you want to see output on your browser console.
     // console.log("The model was loaded successfully!");
 
     const output = document.getElementById("predict-output");
     output.innerHTML = INITIAL_MESSAGE;
+    const canvas = document.getElementById('draw-canvas');
+    canvas.title = '';
+    canvas.style.cursor = 'crosshair';
+
+    enableButton('clear-btn');
+    isModelLoaded = true;
 }
 
 
 async function predict()
 {
-    const numberTranscription = {
-        0: 'Zero',
-        1: 'One',
-        2: 'Two',
-        3: 'Three',
-        4: 'Four',
-        5: 'Five',
-        6: 'Six',
-        7: 'Seven',
-        8: 'Eight',
-        9: 'Nine'
-    }
     const output = document.getElementById('predict-output');
 
     if (isModelLoaded === false || drawing === true)
@@ -265,17 +278,23 @@ async function predict()
         const toPredict = tf.browser.fromPixels(canvas)
             .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
             .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
-
+        
+        // TODO: increase the padding of the canvas before predicting
+        
         // Predict the data and return an array with the probability of all possible outputs
         const prediction = model.predict(toPredict).dataSync();
-
         // Set the prediction to the output with the max probability (greater value) and shows it to the user
         const predictedValue = tf.argMax(prediction).dataSync();
         output.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
-            ` (<strong>${numberTranscription[predictedValue]}</strong>)`;
-
+            ` (<strong>${NUMBER_TO_WORD[predictedValue]}</strong>)`;
+        
         // Prevents the etreme usage of gpu
         tf.engine().endScope();
+
+        console.clear();
+        // The greater probability represents the certainty of the model in the argmax prediction
+        const greaterProbability = tf.max(prediction).dataSync();
+        console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability[0].toPrecision(4) * 100)}%`);
 
         enableButton('clear-btn');
         haveAlreadyPredicted = true;
@@ -299,7 +318,9 @@ async function predict()
 
         clearBtn.addEventListener('click', () => {
             let size = getCanvasSize();
+
             ctx.clearRect(0, 0, size, size);
+
             if (isModelLoaded)
                 output.innerHTML = INITIAL_MESSAGE;
             stopPrediction = true;
@@ -317,8 +338,8 @@ async function predict()
                 output.innerHTML = INITIAL_MESSAGE;
         });
 
-        console.log(message);
         // Load the model at last
         loadModel();
+        console.log(message);
     }
 )('Welcome to the Digit Recognition Web App!');
