@@ -236,8 +236,9 @@ async function loadModel()
 
     const output = document.getElementById("predict-output");
     output.innerHTML = INITIAL_MESSAGE;
+
     const canvas = document.getElementById('draw-canvas');
-    canvas.title = '';
+    canvas.title = 'Click here to draw';
     canvas.style.cursor = 'crosshair';
 
     enableButton('clear-btn');
