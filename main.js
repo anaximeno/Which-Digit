@@ -238,7 +238,7 @@ async function loadModel()
     output.innerHTML = INITIAL_MESSAGE;
 
     const canvas = document.getElementById('draw-canvas');
-    canvas.title = 'Click here to draw';
+    canvas.title = 'Click and Hold to draw';
     canvas.style.cursor = 'crosshair';
 
     enableButton('clear-btn');
