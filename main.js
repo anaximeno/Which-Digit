@@ -20,7 +20,7 @@ const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
 const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
 const PAGE_RESIZE_ADD_VALUE = 200;
-const NUMBER_TO_WORD = {
+const NumberToWord = {
     0: 'Zero',
     1: 'One',
     2: 'Two',
@@ -288,7 +288,7 @@ async function predict(showOutput = true)
         // Set the prediction to the output with the max probability (greater value) and shows it to the user
         const predictedValue = tf.argMax(prediction).dataSync();
         output.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
-            ` (<strong>${NUMBER_TO_WORD[predictedValue]}</strong>)`;
+            ` (<strong>${NumberToWord[predictedValue]}</strong>)`;
 
         // Prevents the etreme usage of gpu
         tf.engine().endScope();
