@@ -1,6 +1,7 @@
 let model;
 let isModelLoaded = false;
 const IMAGE_SIZE = 28;
+const IMAGE_PADDING_VALUE = 2;
 const MODEL_PATH = 'tfjs/Compiled/model.json';
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 
@@ -118,7 +119,7 @@ function prepareCanvas()
 
     /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
-        
+
         if (!isModelLoaded)
             return ;
 
@@ -246,7 +247,7 @@ async function loadModel()
 }
 
 
-async function predict()
+async function predict(showOutput = true)
 {
     const output = document.getElementById('predict-output');
 
@@ -276,27 +277,30 @@ async function predict()
         const canvas = document.getElementById('draw-canvas');
 
         // Aplicate the preprocessing transformations to be a valid input to the model
-        const toPredict = tf.browser.fromPixels(canvas)
-            .resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-            .mean(2).expandDims().expandDims(3).toFloat().div(255.0);
-        
-        // TODO: increase the padding of the canvas before predicting
-        
+        const toPredict = tf.browser.fromPixels(canvas)  // can use '.resizeBilinear' also
+            .resizeNearestNeighbor([IMAGE_SIZE, IMAGE_SIZE])
+            .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
+            .expandDims().expandDims(3).toFloat().div(255.0); /// TODO: IDEIA: Train with padding
+
         // Predict the data and return an array with the probability of all possible outputs
         const prediction = model.predict(toPredict).dataSync();
+
         // Set the prediction to the output with the max probability (greater value) and shows it to the user
         const predictedValue = tf.argMax(prediction).dataSync();
         output.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
             ` (<strong>${NUMBER_TO_WORD[predictedValue]}</strong>)`;
-        
+
         // Prevents the etreme usage of gpu
         tf.engine().endScope();
 
-        console.clear();
-        // The greater probability represents the certainty of the model in the argmax prediction
-        const greaterProbability = tf.max(prediction).dataSync();
-        console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability[0].toPrecision(4) * 100)}%`);
-
+        if (showOutput)
+        {
+            console.clear();
+            // The greater probability represents the certainty of the model in the argmax prediction
+            const greaterProbability = tf.max(prediction).dataSync();
+            console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability[0].toPrecision(4) * 100)}%`);
+        }
+    
         enableButton('clear-btn');
         haveAlreadyPredicted = true;
     }
@@ -318,7 +322,7 @@ async function predict()
         pipe.style.width = width;
 
         clearBtn.addEventListener('click', () => {
-            let size = getCanvasSize();
+            const size = getCanvasSize();
 
             ctx.clearRect(0, 0, size, size);
 
