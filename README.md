@@ -10,3 +10,4 @@ This Web Application can recognize which numbers were drawn by you. For doing th
 
 * *Michael A. Nielsen, "Neural Networks and Deep Learning", Determination Press, 2015* - [*neuralnetworksanddeeplearning.com*](https://neuralnetworksanddeeplearning.com/) (Web Version)
 * *Juan De Dios Santos Rivera, "Practical TensorFlow JS Learning Development"*
+* *Karen Simonyan & Andrew Zisserman, VERY DEEP CONVOLUTIONAL NETWORKS FOR LARGE-SCALE IMAGE RECOGNITION, Visual Geometry Group, Department of Engineering Science, University of Oxford* - [VGG](https://arxiv.org/pdf/1409.1556.pdf)
