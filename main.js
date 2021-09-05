@@ -1,17 +1,10 @@
-let model;
-let isModelLoaded = false;
-const IMAGE_SIZE = 28;
-const IMAGE_PADDING_VALUE = 2;
+/** Global Constants */
 const MODEL_PATH = 'tfjs/Compiled/model.json';
+const IMAGE_RESIZE = 28;
+const IMAGE_PADDING_VALUE = 2;
+const INPUT_SIZE = 32
+// asserts (INPUT_SIZE === IMAGE_SIZE + IMAGE_PADDING_VALUE*2);
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
-
-let lastPosition = { x: 0, y: 0 };
-let drawing = false;
-let stopPrediction = false;
-let haveAlreadyPredicted = false;
-let canvas;
-let ctx;
-
 const MAX_CANVAS_SIZE = 400;
 const MAX_CTX_SIZE = 22;
 const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
@@ -32,6 +25,16 @@ const NumberToWord = {
     8: 'Eight',
     9: 'Nine'
 }
+
+/** Global Variables */
+let model;
+let isModelLoaded = false;
+let lastPosition = { x: 0, y: 0 };
+let drawing = false;
+let stopPrediction = false;
+let haveAlreadyPredicted = false;
+let canvas;
+let ctx;
 
 
 function min(...args)
@@ -271,14 +274,14 @@ async function predict(showOutput = true)
         enableButton('clear-btn');
         output.innerHTML = INITIAL_MESSAGE;
     } else {
-        // Prevents the etreme usage of gpu
+        // Prevents high usage of gpu
         tf.engine().startScope();
 
         const canvas = document.getElementById('draw-canvas');
 
         // Aplicate the preprocessing transformations to be a valid input to the model
         const toPredict = tf.browser.fromPixels(canvas)  // can use '.resizeBilinear' also
-            .resizeNearestNeighbor([IMAGE_SIZE, IMAGE_SIZE])
+            .resizeNearestNeighbor([IMAGE_RESIZE, IMAGE_RESIZE])
             .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
             .expandDims().expandDims(3).toFloat().div(255.0); /// TODO: IDEIA: Train with padding
 
@@ -290,7 +293,7 @@ async function predict(showOutput = true)
         output.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
             ` (<strong>${NumberToWord[predictedValue]}</strong>)`;
 
-        // Prevents the etreme usage of gpu
+        // Prevents high usage of gpu
         tf.engine().endScope();
 
         if (showOutput)
@@ -308,43 +311,43 @@ async function predict(showOutput = true)
 
 
 (function init(message)
-    {
-        // Prepares the canvas to be used
-        prepareCanvas();
-        resizePage();
+{
+    // Prepares the canvas to be used
+    prepareCanvas();
+    resizePage();
 
-        const clearBtn = document.getElementById('clear-btn');
-        const output = document.getElementById('predict-output');
-        const pipe = document.getElementById('pipeline');
+    const clearBtn = document.getElementById('clear-btn');
+    const output = document.getElementById('predict-output');
+    const pipe = document.getElementById('pipeline');
 
-        let width = `${getCanvasSize()}px`;
+    let width = `${getCanvasSize()}px`;
+    output.style.width = width;
+    pipe.style.width = width;
+
+    clearBtn.addEventListener('click', () => {
+        const size = getCanvasSize();
+
+        ctx.clearRect(0, 0, size, size);
+
+        if (isModelLoaded)
+            output.innerHTML = INITIAL_MESSAGE;
+        stopPrediction = true;
+    });
+
+    window.addEventListener('resize', () => {
+        width = `${getCanvasSize()}px`;
         output.style.width = width;
         pipe.style.width = width;
 
-        clearBtn.addEventListener('click', () => {
-            const size = getCanvasSize();
+        resizeCanvas();
+        resizePage();
 
-            ctx.clearRect(0, 0, size, size);
+        if (isModelLoaded)
+            output.innerHTML = INITIAL_MESSAGE;
+    });
 
-            if (isModelLoaded)
-                output.innerHTML = INITIAL_MESSAGE;
-            stopPrediction = true;
-        });
+    // Load the model at last
+    loadModel();
 
-        window.addEventListener('resize', () => {
-            width = `${getCanvasSize()}px`;
-            output.style.width = width;
-            pipe.style.width = width;
-
-            resizeCanvas();
-            resizePage();
-
-            if (isModelLoaded)
-                output.innerHTML = INITIAL_MESSAGE;
-        });
-
-        // Load the model at last
-        loadModel();
-        console.log(message);
-    }
-)('Welcome to the Digit Recognition Web App!');
+    console.log(message);
+})('Welcome to the Digit Recognition Web App!');
