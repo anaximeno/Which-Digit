@@ -262,7 +262,7 @@ async function predict(showOutput = true)
     // HaveAlreadyPredicted prevents showing the same prediction to be predicted again
     if (haveAlreadyPredicted === false)
     {
-        output.innerText = 'Wait...';
+        output.innerText = 'Analyzing The Drawing(...)';
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
     } else
         haveAlreadyPredicted = false;
