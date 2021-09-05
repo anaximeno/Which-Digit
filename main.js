@@ -11,7 +11,7 @@ const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
 const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
-const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 350;
+const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 333;
 const PAGE_RESIZE_ADD_VALUE = 200;
 const NumberToWord = {
     0: 'Zero',
@@ -122,7 +122,6 @@ function prepareCanvas()
 
     /** Mouse events for desktop computers. */
     canvas.addEventListener('mousedown', (e) => {
-
         if (!isModelLoaded)
             return ;
 
@@ -253,8 +252,18 @@ async function loadModel()
 async function predict(showOutput = true)
 {
     const output = document.getElementById('predict-output');
+    const canvas = document.getElementById('draw-canvas');
 
-    if (isModelLoaded === false || drawing === true)
+    // Aplicate the preprocessing transformations to be a valid input to the model
+    const toPredict = tf.browser.fromPixels(canvas)
+        .resizeNearestNeighbor([IMAGE_RESIZE, IMAGE_RESIZE]) // can use '.resizeBilinear' too
+        .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
+        .expandDims().expandDims(3).toFloat().div(255.0);
+    
+    // If the summed value of all pic«xels is equal to zero it means that nothing were drawn on the canvas
+    const allPixelsSummedValue = toPredict.sum().dataSync()[0];
+
+    if (isModelLoaded === false || drawing === true || allPixelsSummedValue === 0)
         return ;
     else
         disableButton('clear-btn');
@@ -277,14 +286,6 @@ async function predict(showOutput = true)
         // Prevents high usage of gpu
         tf.engine().startScope();
 
-        const canvas = document.getElementById('draw-canvas');
-
-        // Aplicate the preprocessing transformations to be a valid input to the model
-        const toPredict = tf.browser.fromPixels(canvas)  // can use '.resizeBilinear' also
-            .resizeNearestNeighbor([IMAGE_RESIZE, IMAGE_RESIZE])
-            .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
-            .expandDims().expandDims(3).toFloat().div(255.0); /// TODO: IDEIA: Train with padding
-
         // Predict the data and return an array with the probability of all possible outputs
         const prediction = model.predict(toPredict).dataSync();
 
@@ -300,8 +301,8 @@ async function predict(showOutput = true)
         {
             console.clear();
             // The greater probability represents the certainty of the model in the argmax prediction
-            const greaterProbability = tf.max(prediction).dataSync();
-            console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability[0].toPrecision(4) * 100)}%`);
+            const greaterProbability = tf.max(prediction).dataSync()[0];
+            console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability.toPrecision(4) * 100)}%`);
         }
     
         enableButton('clear-btn');
