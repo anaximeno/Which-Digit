@@ -58,6 +58,14 @@ function max(...args)
     return maximum;
 }
 
+
+function printOutput(msg = INITIAL_MESSAGE)
+{
+    const out = document.getElementById('predict-output'); 
+    out.innerHTML = msg;
+}
+
+
 function resizePage()
 {
     const main = document.getElementsByTagName('html')[0];
@@ -135,7 +143,9 @@ function prepareCanvas()
         let wasDrawing = drawing;
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT);
-        if (isModelLoaded && wasDrawing && !drawing)
+        if (stopPrediction)
+            stopPrediction = false;
+        else if (isModelLoaded && wasDrawing && !drawing)
             predict();
     });
 
@@ -153,7 +163,9 @@ function prepareCanvas()
         let wasDrawing = drawing;
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
-        if (isModelLoaded && wasDrawing && !drawing)
+        if (stopPrediction)
+            stopPrediction = false;
+        else if (isModelLoaded && wasDrawing && !drawing)
             predict();
     });
 
@@ -197,7 +209,9 @@ function prepareCanvas()
         let wasDrawing = drawing;
         drawing = false;
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
-        if (isModelLoaded && wasDrawing && !drawing)
+        if (stopPrediction)
+            stopPrediction = false;
+        else if (isModelLoaded && wasDrawing && !drawing)
             predict();
     });
 }
@@ -237,8 +251,7 @@ async function loadModel()
     // Uncomment the line below if you want to see output on your browser console.
     // console.log("The model was loaded successfully!");
 
-    const output = document.getElementById("predict-output");
-    output.innerHTML = INITIAL_MESSAGE;
+    printOutput();
 
     const canvas = document.getElementById('draw-canvas');
     canvas.title = 'Click and Hold to draw';
@@ -251,7 +264,6 @@ async function loadModel()
 
 async function predict(showOutput = true)
 {
-    const output = document.getElementById('predict-output');
     const canvas = document.getElementById('draw-canvas');
 
     // Aplicate the preprocessing transformations to be a valid input to the model
@@ -260,18 +272,22 @@ async function predict(showOutput = true)
         .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
         .expandDims().expandDims(3).toFloat().div(255.0);
     
-    // If the summed value of all pic«xels is equal to zero it means that nothing were drawn on the canvas
+    // If the summed value of all pixels is equal to zero it means that nothing were drawn on the canvas
     const allPixelsSummedValue = toPredict.sum().dataSync()[0];
 
-    if (isModelLoaded === false || drawing === true || allPixelsSummedValue === 0)
+    if (!isModelLoaded || drawing || allPixelsSummedValue === 0)
+    {
+        if (allPixelsSummedValue === 0)
+            printOutput('Click and Hold to draw');
         return ;
+    }
     else
         disableButton('clear-btn');
 
     // HaveAlreadyPredicted prevents showing the same prediction to be predicted again
     if (haveAlreadyPredicted === false)
     {
-        output.innerText = 'Analyzing The Drawing(...)';
+        printOutput('Analyzing The Drawing(...)');
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
     } else
         haveAlreadyPredicted = false;
@@ -281,7 +297,7 @@ async function predict(showOutput = true)
     {
         stopPrediction = false;
         enableButton('clear-btn');
-        output.innerHTML = INITIAL_MESSAGE;
+        printOutput();
     } else {
         // Prevents high usage of gpu
         tf.engine().startScope();
@@ -291,8 +307,8 @@ async function predict(showOutput = true)
 
         // Set the prediction to the output with the max probability (greater value) and shows it to the user
         const predictedValue = tf.argMax(prediction).dataSync();
-        output.innerHTML = `The number drawn is <strong>${predictedValue}</strong>` +
-            ` (<strong>${NumberToWord[predictedValue]}</strong>)`;
+        printOutput(`The number drawn is <strong>${predictedValue}</strong>` +
+            ` (<strong>${NumberToWord[predictedValue]}</strong>)`);
 
         // Prevents high usage of gpu
         tf.engine().endScope();
@@ -331,7 +347,8 @@ async function predict(showOutput = true)
         ctx.clearRect(0, 0, size, size);
 
         if (isModelLoaded)
-            output.innerHTML = INITIAL_MESSAGE;
+            printOutput();
+
         stopPrediction = true;
     });
 
@@ -344,7 +361,7 @@ async function predict(showOutput = true)
         resizePage();
 
         if (isModelLoaded)
-            output.innerHTML = INITIAL_MESSAGE;
+            printOutput();
     });
 
     // Load the model at last
