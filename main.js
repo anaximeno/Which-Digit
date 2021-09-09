@@ -11,7 +11,7 @@ const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
 const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
-const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 333;
+const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 200;
 const PAGE_RESIZE_ADD_VALUE = 200;
 const NumberToWord = {
     0: 'Zero',
@@ -254,7 +254,7 @@ async function loadModel()
     printOutput();
 
     const canvas = document.getElementById('draw-canvas');
-    canvas.title = 'Click and Hold to draw';
+    canvas.title = '';
     canvas.style.cursor = 'crosshair';
 
     enableButton('clear-btn');
@@ -278,16 +278,16 @@ async function predict(showOutput = true)
     if (!isModelLoaded || drawing || allPixelsSummedValue === 0)
     {
         if (allPixelsSummedValue === 0)
-            printOutput('Click and Hold to draw');
+            printOutput('<strong>TIP</strong>: Click and Hold to draw');
         return ;
     }
     else
         disableButton('clear-btn');
 
-    // HaveAlreadyPredicted prevents showing the same prediction to be predicted again
+    // HaveAlreadyPredicted prevents the same prediction to be predicted again
     if (haveAlreadyPredicted === false)
     {
-        printOutput('Analyzing The Drawing(...)');
+        printOutput('Analyzing The Drawing(<strong>...</strong>)');
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
     } else
         haveAlreadyPredicted = false;
@@ -304,22 +304,21 @@ async function predict(showOutput = true)
 
         // Predict the data and return an array with the probability of all possible outputs
         const prediction = model.predict(toPredict).dataSync();
-
         // Set the prediction to the output with the max probability (greater value) and shows it to the user
         const predictedValue = tf.argMax(prediction).dataSync();
         printOutput(`The number drawn is <strong>${predictedValue}</strong>` +
             ` (<strong>${NumberToWord[predictedValue]}</strong>)`);
 
-        // Prevents high usage of gpu
-        tf.engine().endScope();
-
-        if (showOutput)
+        if (showOutput === true)
         {
             console.clear();
             // The greater probability represents the certainty of the model in the argmax prediction
             const greaterProbability = tf.max(prediction).dataSync()[0];
             console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability.toPrecision(4) * 100)}%`);
         }
+
+        // Prevents high usage of gpu
+        tf.engine().endScope();
     
         enableButton('clear-btn');
         haveAlreadyPredicted = true;
@@ -327,8 +326,7 @@ async function predict(showOutput = true)
 }
 
 
-(function init(message)
-{
+(function (message) {
     // Prepares the canvas to be used
     prepareCanvas();
     resizePage();
