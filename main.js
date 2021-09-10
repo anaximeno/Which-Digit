@@ -268,7 +268,7 @@ async function predict(showOutput = true)
 
     // Aplicate the preprocessing transformations to be a valid input to the model
     const toPredict = tf.browser.fromPixels(canvas)
-        .resizeNearestNeighbor([IMAGE_RESIZE, IMAGE_RESIZE]) // can use '.resizeBilinear' too
+        .resizeBilinear([IMAGE_RESIZE, IMAGE_RESIZE]) // can use '.resizeNearestNeighbor' too
         .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
         .expandDims().expandDims(3).toFloat().div(255.0);
     
