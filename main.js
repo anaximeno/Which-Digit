@@ -1,19 +1,21 @@
 /** Global Constants */
-const MODEL_PATH = 'tfjs/Compiled/model.json';
-const IMAGE_RESIZE = 28;
-const IMAGE_PADDING_VALUE = 2;
-const INPUT_SIZE = 32
-// asserts (INPUT_SIZE === IMAGE_SIZE + IMAGE_PADDING_VALUE*2);
+const PATH_TO_THE_MODEL = 'tfjs/Compiled/model.json';
+const IMAGE_SIZE = 30;
+const IMAGE_PADDING_VALUE = 1;
+const INPUT_SIZE = 32;
+///assert (INPUT_SIZE === IMAGE_SIZE + IMAGE_PADDING_VALUE*2);
+const PADDING = [[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]];
+const IMAGE_RESIZE_TO = [IMAGE_SIZE, IMAGE_SIZE];
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 const MAX_CANVAS_SIZE = 400;
-const MAX_CTX_SIZE = 22;
+const MAX_CTX_SIZE = 23;
 const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
 const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
 const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 200;
-const PAGE_RESIZE_ADD_VALUE = 200;
-const NumberToWord = {
+const PAGE_RESIZE_ADD_VALUE = 285;
+const GetNumberVoc = {
     0: 'Zero',
     1: 'One',
     2: 'Two',
@@ -69,12 +71,7 @@ function printOutput(msg = INITIAL_MESSAGE)
 function resizePage()
 {
     const main = document.getElementsByTagName('html')[0];
-    const clear_height = 45;
-    const output_height = 40;
-
-    const summed_height = clear_height + output_height + getCanvasSize() + PAGE_RESIZE_ADD_VALUE;
-
-    main.style.height = max(window.innerHeight, summed_height)+'px';
+    main.style.height = `${max(window.innerHeight, PAGE_RESIZE_ADD_VALUE + getCanvasSize())}px`;
 }
 
 
@@ -242,92 +239,94 @@ function disableButton(selector)
 }
 
 
-async function loadModel()
+async function loadModel(showLog = false)
 {
-    // Load the saved on MODEL_PATH and await the process to be complete
-    model = await tf.loadLayersModel(MODEL_PATH);
-    isModelLoaded = false;
-
-    // Uncomment the line below if you want to see output on your browser console.
-    // console.log("The model was loaded successfully!");
-
-    printOutput();
-
     const canvas = document.getElementById('draw-canvas');
+
+    // Load the model saved at `PATH_TO_THE_MODEL`
+    model = await tf.loadLayersModel(PATH_TO_THE_MODEL);
+
+    if (showLog)
+        console.log("The model was loaded successfully!");
+
     canvas.title = '';
     canvas.style.cursor = 'crosshair';
-
-    enableButton('clear-btn');
+    
     isModelLoaded = true;
+    enableButton('clear-btn');
+    printOutput();
 }
 
 
-async function predict(showOutput = true)
+async function predict(showLog = false)
 {
     const canvas = document.getElementById('draw-canvas');
 
-    // Aplicate the preprocessing transformations to be a valid input to the model
-    const toPredict = tf.browser.fromPixels(canvas)
-        .resizeBilinear([IMAGE_RESIZE, IMAGE_RESIZE]) // can use '.resizeNearestNeighbor' too
-        .mean(2).pad([[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]])
-        .expandDims().expandDims(3).toFloat().div(255.0);
-    
-    // If the summed value of all pixels is equal to zero it means that nothing were drawn on the canvas
-    const allPixelsSummedValue = toPredict.sum().dataSync()[0];
+    // Get the canvas image from pixels and apply some transformations necessary for being 
+    // a good input on the model.
+    // Below can be used either `resizeBilinear` or `resizeNearestNeighbor` for resizing the image.
+    const InPut = tf.browser.fromPixels(canvas).resizeNearestNeighbor(IMAGE_RESIZE_TO)
+        .mean(2).pad(PADDING).expandDims().expandDims(3).toFloat().div(255.0);
 
-    if (!isModelLoaded || drawing || allPixelsSummedValue === 0)
-    {
-        if (allPixelsSummedValue === 0)
-            printOutput('<strong>TIP</strong>: Click and Hold to draw');
+
+    if (!isModelLoaded || drawing)
+        return ;
+    else if (InPut.sum().dataSync()[0] === 0) {
+        // The condition above checks if the sum of all pixels on the canvas is equal to zero,
+        // if true that means that nothing is drawn on the canvas.
+        printOutput('<strong>TIP</strong>: Click and Hold to draw');
         return ;
     }
     else
         disableButton('clear-btn');
 
+
     // HaveAlreadyPredicted prevents the same prediction to be predicted again
-    if (haveAlreadyPredicted === false)
-    {
+    if (haveAlreadyPredicted === false) {
         printOutput('Analyzing The Drawing(<strong>...</strong>)');
         await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
     } else
         haveAlreadyPredicted = false;
 
 
-    if (stopPrediction === true)
-    {
+    if (stopPrediction) {
         stopPrediction = false;
         enableButton('clear-btn');
         printOutput();
-    } else {
-        // Prevents high usage of gpu
-        tf.engine().startScope();
-
-        // Predict the data and return an array with the probability of all possible outputs
-        const prediction = model.predict(toPredict).dataSync();
-        // Set the prediction to the output with the max probability (greater value) and shows it to the user
-        const predictedValue = tf.argMax(prediction).dataSync();
-        printOutput(`The number drawn is <strong>${predictedValue}</strong>` +
-            ` (<strong>${NumberToWord[predictedValue]}</strong>)`);
-
-        if (showOutput === true)
-        {
-            console.clear();
-            // The greater probability represents the certainty of the model in the argmax prediction
-            const greaterProbability = tf.max(prediction).dataSync()[0];
-            console.log(` Prediction: ${predictedValue}\n Certainty ${(greaterProbability.toPrecision(4) * 100)}%`);
-        }
-
-        // Prevents high usage of gpu
-        tf.engine().endScope();
-    
-        enableButton('clear-btn');
-        haveAlreadyPredicted = true;
+        return ;
     }
+
+    // Prevents high usage of gpu
+    tf.engine().startScope();
+
+    // ForwardPropagates the input and return the output with ten probabilities,
+    // corresponding on the probability of being each of the ten digits.
+    const predictions = model.predict(InPut).dataSync();
+
+    // The predicted number will be the index which has the greater probability
+    const predictedNumber = tf.argMax(predictions).dataSync();
+
+    // The greater probability represents how certain the model is on its prediction
+    const greaterProbability = tf.max(predictions).dataSync()[0];
+    
+    printOutput(`The number drawn is <strong>${predictedNumber}</strong> (<strong>${GetNumberVoc[predictedNumber]}</strong>)`);
+
+    // Prevents high usage of gpu
+    tf.engine().endScope();
+
+    if (showLog)
+    {
+        console.clear();
+        console.log(` Prediction: ${predictedNumber}`);
+        console.log(` Certainty ${(greaterProbability.toPrecision(4) * 100)}%`);
+    }
+
+    enableButton('clear-btn');
+    haveAlreadyPredicted = true;
 }
 
 
-(function (message) {
-    // Prepares the canvas to be used
+(function (message, showLog = true) {
     prepareCanvas();
     resizePage();
 
@@ -340,9 +339,8 @@ async function predict(showOutput = true)
     pipe.style.width = width;
 
     clearBtn.addEventListener('click', () => {
-        const size = getCanvasSize();
-
-        ctx.clearRect(0, 0, size, size);
+        const SIZE = getCanvasSize();
+        ctx.clearRect(0, 0, SIZE, SIZE);
 
         if (isModelLoaded)
             printOutput();
@@ -362,8 +360,9 @@ async function predict(showOutput = true)
             printOutput();
     });
 
-    // Load the model at last
-    loadModel();
+    if (showLog)
+        console.log(message);
 
-    console.log(message);
-})('Welcome to the Digit Recognition Web App!');
+    // Load the model at last
+    loadModel(showLog);
+})('Welcome to the Digit Recognition Web App!', false);
