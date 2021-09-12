@@ -4,7 +4,7 @@ This Web Application can recognize which numbers were drawn by you. For doing th
 
 [**Digit Recognition Web App**](https://anaximeno.github.io/DigitRecognitionWebApp/ "Digit Recognition Web App")
 
-If you want to see how it was trained click [this link](https://colab.research.google.com/drive/1fxzuPJkmSxQ6_pjnB6UHdkJoke2NlAR8).
+For more information about the model which was used for inference, see the [Model Card](https://github.com/anaximeno/DigitRecognitionWebApp/blob/main/model_card.md "Model Card").
 
 ---
 
