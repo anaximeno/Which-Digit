@@ -1,39 +1,38 @@
 # Model Card - The Digit Recognition Web App
 
----
-### Model Description
+## Model Description
 
-**Author**
+* **Author**:
 
-Anaxímeno Brito
+    - Anaxímeno Brito
 
-**Input**
+ * **Input**:
 
-32x32 Image
+    - 32x32 Image
 
-**Output**
+* **Output**:
 
-For each drawing, the model outputs ten probabilities corresponding to the chance of being each of the ten digits (0 to 9), and the digit with greater probability will be considered as the result
+    - For each drawing, the model outputs ten probabilities corresponding to the chance of being each of the ten digits (0 to 9), and the digit with greater probability will be considered as the result
 
-**Model Date**
+* **Model Date**:
 
-September 2021
+    - September 2021
 
-**Model Version**
+* **Model Version**:
 
-Digit Recognition Model V5
+    - Digit Recognition Model V5
 
-**Model architecture**
+* **Model architecture**:
 
-Convolutional Neural Network based architecture
+    - Convolutional Neural Network based architecture
 
----
-### Inteded Use
+
+## Inteded Use
 
 The Digit Recognition Model was built to be used on this web application and explore the application of Deep Learning in real-life situations. The intended users are persons who want to test this Web App or explore this model's capabilities.
 
----
-### Training Data
 
-The data used to train was the [MNIST dataset](http://yann.lecun.com/exdb/mnist/ "Mnist Dataset"), which consists of a set of black and white images with digits between 0 to 9. Since the digits are centered on the image, it was necessary to apply certain arbitrary transformations before train the model like translations, zooms, and rotations, which made the model predict quite well on different conditions. If you want to see the notebook it was trained on [just click this link](https://colab.research.google.com/drive/1fxzuPJkmSxQ6_pjnB6UHdkJoke2NlAR8 "Training Digit Model V5").
+## Training Data
+
+The data used to train was the [MNIST dataset](http://yann.lecun.com/exdb/mnist/ "Mnist Dataset"), which consists of a set of black and white images with digits between 0 to 9. Since the digits are centered on the image, it was necessary to apply certain arbitrary transformations before train the model like translations, zooms, and rotations, which made the model predict quite well on different conditions. If you want to see the how it was trained [just click this link](https://colab.research.google.com/drive/1fxzuPJkmSxQ6_pjnB6UHdkJoke2NlAR8 "Training Digit Model V5").
 
