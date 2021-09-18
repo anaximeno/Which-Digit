@@ -1,2 +1,4 @@
 .ipynb_checkpoints/
 *-Testing-*
+__pycache__/
+.pytest_cache/
