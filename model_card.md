@@ -2,29 +2,29 @@
 
 ## Model Description
 
-* **Author**:
+### Author
 
-    - Anaxímeno Brito
+Anaxímeno Brito
 
- * **Input**:
+### Input
 
-    - 32x32 Image
+32x32 Image
 
-* **Output**:
+### Output
 
-    - For each drawing, the model outputs ten probabilities corresponding to the chance of being each of the ten digits (0 to 9), and the digit with greater probability will be considered as the result
+For each drawing, the model outputs ten probabilities corresponding to the chance of being each of the ten digits (0 to 9), and the digit with greater probability will be considered as the result
 
-* **Model Date**:
+### Model Date
 
-    - September 2021
+September 2021
 
-* **Model Version**:
+### Model Version
 
-    - Mnet V2
+Mnet V2
 
-* **Model architecture**:
+### Model architecture
 
-    - Convolutional Neural Network based architecture
+Convolutional Neural Network based architecture
 
 
 ## Inteded Use
