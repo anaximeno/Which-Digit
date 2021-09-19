@@ -1,4 +1,5 @@
 /** Global Constants */
+const LOGS = false;
 const PATH_TO_THE_MODEL = 'tfjs/Compiled/model.json';
 const IMAGE_SIZE = 30;
 const IMAGE_PADDING_VALUE = 1;
@@ -8,7 +9,7 @@ const PADDING = [[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALU
 const IMAGE_RESIZE_TO = [IMAGE_SIZE, IMAGE_SIZE];
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 const MAX_CANVAS_SIZE = 400;
-const MAX_CTX_SIZE = 23;
+const MAX_CTX_SIZE = 22;
 const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
 const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
 const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
@@ -63,7 +64,7 @@ function max(...args)
 
 function printOutput(msg = INITIAL_MESSAGE)
 {
-    const out = document.getElementById('predict-output'); 
+    const out = document.getElementById('predict-output');
     out.innerHTML = msg;
 }
 
@@ -239,30 +240,30 @@ function disableButton(selector)
 }
 
 
-async function loadModel(showLog = false)
+async function loadModel()
 {
     const canvas = document.getElementById('draw-canvas');
 
     // Load the model saved at `PATH_TO_THE_MODEL`
     model = await tf.loadLayersModel(PATH_TO_THE_MODEL);
 
-    if (showLog)
-        console.log("The model was loaded successfully!");
+    if (LOGS)
+        console.log("Info: The model was loaded successfully!");
 
     canvas.title = '';
     canvas.style.cursor = 'crosshair';
-    
+
     isModelLoaded = true;
     enableButton('clear-btn');
     printOutput();
 }
 
 
-async function predict(showLog = false)
+async function predict()
 {
     const canvas = document.getElementById('draw-canvas');
 
-    // Get the canvas image from pixels and apply some transformations necessary for being 
+    // Get the canvas image from pixels and apply some transformations necessary for being
     // a good input on the model.
     // Below can be used either `resizeBilinear` or `resizeNearestNeighbor` for resizing the image.
     const InPut = tf.browser.fromPixels(canvas).resizeNearestNeighbor(IMAGE_RESIZE_TO)
@@ -308,17 +309,18 @@ async function predict(showLog = false)
 
     // The greater probability represents how certain the model is on its prediction
     const greaterProbability = tf.max(predictions).dataSync()[0];
-    
+
     printOutput(`The number drawn is <strong>${predictedNumber}</strong> (<strong>${GetNumberVoc[predictedNumber]}</strong>)`);
 
     // Prevents high usage of gpu
     tf.engine().endScope();
 
-    if (showLog)
+    if (LOGS)
     {
-        console.clear();
-        console.log(` Prediction: ${predictedNumber}`);
-        console.log(` Certainty ${(greaterProbability.toPrecision(4) * 100)}%`);
+        const d = new Date();
+
+        console.log(`At (${d.getUTCHours() - 1}:${d.getUTCMinutes()}:${d.getUTCSeconds()})\n` +
+        `* Prediction: ${predictedNumber}\n` + `* Certainty: ${(greaterProbability.toPrecision(4) * 100)}%`);
     }
 
     enableButton('clear-btn');
@@ -326,7 +328,10 @@ async function predict(showLog = false)
 }
 
 
-(function (message, showLog = true) {
+/**
+ * @info Function which initialize the program
+ */
+(function () {
     prepareCanvas();
     resizePage();
 
@@ -360,9 +365,9 @@ async function predict(showLog = false)
             printOutput();
     });
 
-    if (showLog)
-        console.log(message);
+    if (LOGS)
+        console.log('Welcome to the Digit Recognition Web App!');
 
     // Load the model at last
-    loadModel(showLog);
-})('Welcome to the Digit Recognition Web App!', false);
+    loadModel();
+})();
