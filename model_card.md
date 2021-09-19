@@ -20,7 +20,7 @@
 
 * **Model Version**:
 
-    - Digit Recognition Model V5
+    - Mnet V2
 
 * **Model architecture**:
 
