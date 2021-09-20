@@ -29,7 +29,7 @@ main {
 h1 {
     text-align: center;
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 24px;
+    font-size: 25px;
     text-shadow: 0px 0px 2px black;
     display: inline-block;
     cursor: default;
@@ -57,7 +57,7 @@ h1 {
     font-size: 1.2em;
     letter-spacing: 2px;
     border: 2px black solid;
-    border-radius: 5px 5px 0 0;
+    border-radius: 2px 2px 0 0;
     text-shadow: 0px 0px 1.5px black;
 }
 #clear-btn {
@@ -70,23 +70,20 @@ h1 {
     letter-spacing: 2px;
     background-color: black;
     border-color: #181818;
-    border-radius: 5px;
+    border-radius: 2px;
     color: white;
-    text-shadow: 0 0 1px white;
 }
 #clear-btn:hover {
     cursor: pointer;
 }
 #clear-btn:active {
-    text-shadow: none;
     background-color: rgba(17, 17, 17, 0.938);
-    border-color: rgba(17, 17, 17, 0.938);
+    border-color: rgb(17, 17, 17);
 }
 #clear-btn:disabled {
     background-color: rgb(39, 39, 39);
     border-color: rgb(39, 39, 39);
     color: rgba(255, 255, 255, 0.418);
-    text-shadow: none;
     box-shadow: none;
     cursor: not-allowed;
 }
@@ -116,7 +113,7 @@ h1 {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    border-radius: 0 0 5px 5px;
+    border-radius: 0 0 2px 2px;
 }
 #draw-canvas:hover {
     cursor: not-allowed;
