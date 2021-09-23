@@ -1,5 +1,7 @@
 # Model Card - The Digit Recognition Web App
 
+The model used in the Digit Recognition Web App can recognize which numbers were drawn by you. It was trained using two python frameworks for Machine Learning and Deep Learning, Tensorflow and Keras, and another JavaScript framework used for inference, the TensorflowJS.
+
 ## Model Description
 
 ### Author
