@@ -37,5 +37,5 @@ The Digit Recognition Model was built to be used on this web application and exp
 ## Training Data
 
 The data used to train was the [MNIST dataset](http://yann.lecun.com/exdb/mnist/ "Mnist Dataset"), which consists of a set of black and white images with digits between 0 to 9. Since the digits are centered on the image, it was necessary to apply certain arbitrary transformations before train the model like translations, zooms, and rotations, which made the model predict quite well on different conditions. I also applied another transformation during training, increasing images sizes to 32x32 because I believe it is a better input format for this application.  
-If you want to see the how it was trained [just click this link](https://colab.research.google.com/drive/1fxzuPJkmSxQ6_pjnB6UHdkJoke2NlAR8 "Training Digit Model V5").
+If you want to see the how it was trained [just click this link](https://colab.research.google.com/gist/anaximeno/822f126f1c6642028e29b46f0d801b9c/trainingthedigitmodel.ipynb "Training Digit Model V5").
 
