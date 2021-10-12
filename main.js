@@ -6,7 +6,7 @@ const IMAGE_PADDING_VALUE = 1;
 const INPUT_SIZE = 32;
 ///assert (INPUT_SIZE === IMAGE_SIZE + IMAGE_PADDING_VALUE*2);
 const PADDING = [[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]];
-const IMAGE_RESIZE_TO = [IMAGE_SIZE, IMAGE_SIZE];
+const IMAGE_RESIZE_SHAPE = [IMAGE_SIZE, IMAGE_SIZE];
 const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
 const MAX_CANVAS_SIZE = 400;
 const MAX_CTX_SIZE = 22;
@@ -266,7 +266,7 @@ async function predict()
     // Get the canvas image from pixels and apply some transformations necessary for being
     // a good input on the model.
     // Below can be used either `resizeBilinear` or `resizeNearestNeighbor` for resizing the image.
-    const InPut = tf.browser.fromPixels(canvas).resizeNearestNeighbor(IMAGE_RESIZE_TO)
+    const InPut = tf.browser.fromPixels(canvas).resizeBilinear(IMAGE_RESIZE_SHAPE)
         .mean(2).pad(PADDING).expandDims().expandDims(3).toFloat().div(255.0);
 
 
