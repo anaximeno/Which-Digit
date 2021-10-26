@@ -24,7 +24,7 @@
             h1 {
                 font-size: 1.5em;
             }
-            #predict-output {
+            #output {
                 font-size: 1.0em;
             }
         }
@@ -32,7 +32,7 @@
             h1 {
                 font-size: 1.3em;
             }
-            #predict-output {
+            #output {
                 font-size: 1.0em;
             }
             .top-text {
@@ -43,7 +43,7 @@
             h1 {
                 font-size: 1.1em;
             }
-            #predict-output {
+            #output {
                 font-size: 0.8em;
             }
         }
@@ -51,7 +51,7 @@
             h1 {
                 font-size: 0.9em;
             }
-            #predict-output {
+            #output {
                 font-size: 0.8em;
             }
         }
@@ -61,11 +61,11 @@
     <main>
         <h1>Handwritten Digit Recognition App</h1>
         <div class="box">
-            <div id="predict-output" >Loading The Data, Please Wait(<strong>...</strong>)</div>
-            <canvas id="draw-canvas" class="digits-canvas" width="400" height="400" title="Wait Please(...)"></canvas>
+            <div id="output" >Loading The Data, Please Wait(<strong>...</strong>)</div>
+            <canvas id="draw-canvas" class="digits-canvas" width="400" height="400""></canvas>
         </div>
         <div id="pipeline">
-            <button id="clear-btn" disabled>CLEAR</button>
+            <button id="clear-btn" disabled>Clear</button>
         </div>
         <script src="./main.js" type="module" async></script>
     </main>

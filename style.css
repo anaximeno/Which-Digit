@@ -34,8 +34,8 @@ h1 {
     display: inline-block;
     cursor: default;
 }
-#pipeline, #predict-output {
-    width: 500px;
+#pipeline, #output {
+    /* width: 400px; */
     margin: auto;
     align-content: center;
     text-align: center;
@@ -48,7 +48,7 @@ h1 {
     margin-top: 20px;
     margin-bottom: 20px;
 }
-#predict-output {
+#output {
     display: block;
     height: 40px;
     padding-top: 6px;
