@@ -4,11 +4,10 @@ This Web Application can recognize which numbers were drawn by you. To do this i
 
 [**Digit Recognition Web App**](https://anaximeno.github.io/DigitRecognitionWebApp/ "Digit Recognition Web App")
 
-For more information about the model used for inference, click on the [Model Card](https://github.com/anaximeno/DigitRecognitionWebApp/blob/main/model_card.md "Model Card").
+For more information about the model used for inference, click on the [Model Card](https://github.com/anaximeno/DigitRecognitionWebApp/blob/main/MODEL_CARD.md "Watch Model Card").
 
----
 
-## References:
+## Main References:
 
 * *Michael A. Nielsen, "Neural Networks and Deep Learning", Determination Press, 2015* - [*neuralnetworksanddeeplearning.com*](https://neuralnetworksanddeeplearning.com/) (Web Version)
 * *Juan De Dios Santos Rivera, "Practical TensorFlow JS Learning Development"*
