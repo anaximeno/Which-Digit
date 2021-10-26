@@ -71,14 +71,15 @@ h1 {
     background-color: black;
     border-color: #181818;
     border-radius: 2px;
+    border-style: none;
     color: white;
 }
 #clear-btn:hover {
     cursor: pointer;
 }
 #clear-btn:active {
-    background-color: rgba(17, 17, 17, 0.938);
-    border-color: rgb(17, 17, 17);
+    background-color: rgb(68, 68, 68);
+    border-color: rgb(68, 68, 68);
 }
 #clear-btn:disabled {
     background-color: rgb(39, 39, 39);

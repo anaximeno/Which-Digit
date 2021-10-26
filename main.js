@@ -1,46 +1,30 @@
-/** Global Constants */
-const LOGS = false;
-const PATH_TO_THE_MODEL = './data/compiled/model.json';
-const IMAGE_SIZE = 34;
-const IMAGE_PADDING_VALUE = 1;
-const INPUT_SIZE = 36;
-
-if (INPUT_SIZE !== IMAGE_SIZE + IMAGE_PADDING_VALUE*2) 
-    throw Error('Shapes Mismatch!');
-
-const PADDING = [[IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE], [IMAGE_PADDING_VALUE, IMAGE_PADDING_VALUE]];
-const IMAGE_RESIZE_SHAPE = [IMAGE_SIZE, IMAGE_SIZE];
-const INITIAL_MESSAGE = 'Draw any digit between <strong>0</strong> to <strong>9</strong>';
-const MAX_CANVAS_SIZE = 400;
-const MAX_CTX_SIZE = 22;
-const CANVAS_RESIZE_SUBTRACT_VALUE = 30;
-const CTX_SCALE_DIVISOR_VALUE = MAX_CANVAS_SIZE / MAX_CTX_SIZE;
-const TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING = 1300;
-const TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT = 1500;
-const TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE = 200;
-const PAGE_RESIZE_ADD_VALUE = 285;
-const GetNumberVoc = {
-    0: 'Zero',
-    1: 'One',
-    2: 'Two',
-    3: 'Three',
-    4: 'Four',
-    5: 'Five',
-    6: 'Six',
-    7: 'Seven',
-    8: 'Eight',
-    9: 'Nine'
-}
-
-/** Global Variables */
-let model;
-let isModelLoaded = false;
-let lastPosition = { x: 0, y: 0 };
+const SHOW_LOGS = true;
+let modelWasLoaded = false;
 let drawing = false;
-let stopPrediction = false;
-let haveAlreadyPredicted = false;
-let canvas;
-let ctx;
+let haltPrediction = false;
+let havePredictLastDraw = false;
+let lastPos = {x: 0, y: 0};
+let model;
+
+
+const OutSection = new class {
+    constructor(id, defaultMsg) {
+        this._element = document.getElementById(id);
+        this._defaultMsg = defaultMsg;
+    }
+    print(message) {
+        this._element.innerHTML = message;
+    }
+    printDefaultMessage() {
+        this.print(this._defaultMsg)
+    }
+}('output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>');
+
+
+function sleep(milisecs) {
+    // Stops the execution by 'milisecs' miliseconds.
+    return new Promise(resolve => setTimeout(resolve, milisecs));
+}
 
 
 function min(...args)
@@ -65,312 +49,245 @@ function max(...args)
 }
 
 
-function printOutput(msg = INITIAL_MESSAGE)
-{
-    const out = document.getElementById('predict-output');
-    out.innerHTML = msg;
-}
-
-
-function resizePage()
-{
+function resizeHTML(pageAddSize=285) {
     const main = document.getElementsByTagName('html')[0];
-    main.style.height = `${max(window.innerHeight, PAGE_RESIZE_ADD_VALUE + getCanvasSize())}px`;
+    const innerH = window.innerHeight;
+    main.style.height = `${max(innerH, pageAddSize + calculateNewCanvasSize())}px`;
 }
 
 
-function getCanvasSize()
-{
-    // Prevents some errors when resizing the canvas
-    const window_width = window.outerWidth > 0  ?
-        min(window.innerWidth, window.outerWidth) : window.innerWidth;
-
-    const width = window_width > (MAX_CANVAS_SIZE + CANVAS_RESIZE_SUBTRACT_VALUE) ?
-        MAX_CANVAS_SIZE : (window_width - CANVAS_RESIZE_SUBTRACT_VALUE);
-
-    return width;
+function calculateNewCanvasSize(maxSize=400, increaseSize=30) {
+    const innerW = window.innerWidth;
+    const outerW = window.outerWidth;
+    const width = min(innerW, outerW) || innerW;
+    return width > (maxSize + increaseSize) ? maxSize : (width - increaseSize);
 }
 
 
-function getCtxSize()
-{
-    return getCanvasSize() / CTX_SCALE_DIVISOR_VALUE;
+function calculateNewCtxSize(maxCTXSize=22, maxCanvasSize=400) {
+    return (calculateNewCanvasSize(maxCanvasSize, 30) * maxCTXSize) / maxCanvasSize;
 }
 
 
-function sleep(milisecs)
-{
-    // Stops the execution by 'milisecs' miliseconds.
-    return new Promise(resolve => setTimeout(resolve, milisecs));
-}
-
-
-function resizeCanvas()
-{
-    // Get the canvas element
-    const canvas = document.getElementById('draw-canvas');
-    // Set the width and the height to the better possible size
-    let size = getCanvasSize();
-    canvas.width = size;
-    canvas.height = size;
-    ctx = canvas.getContext('2d');
-    ctx.strokeStyle = 'white';
-    ctx.fillStyle = 'white';
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.lineWidth = getCtxSize();
-}
-
-
-function prepareCanvas()
-{
-    // Get the canvas element
-    const canvas = document.getElementById('draw-canvas');
-    // Resize the canvas element
-    resizeCanvas();
-
-    /** Mouse events for desktop computers. */
-    canvas.addEventListener('mousedown', (e) => {
-        if (!isModelLoaded)
-            return ;
-
-        drawing = true;
-        stopPrediction = false;
-        haveAlreadyPredicted = false;
-        lastPosition = { x: e.offsetX, y: e.offsetY };
-    });
-
-    canvas.addEventListener('mouseout', async () => {
-        let wasDrawing = drawing;
-        drawing = false;
-        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_MOUSE_OUT);
-        if (stopPrediction)
-            stopPrediction = false;
-        else if (isModelLoaded && wasDrawing && !drawing)
-            predict();
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-        if (!drawing)
-            return ;
-        ctx.beginPath();
-        ctx.moveTo(lastPosition.x, lastPosition.y);
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-        lastPosition = { x: e.offsetX, y: e.offsetY };
-    });
-
-    canvas.addEventListener('mouseup', async () => {
-        let wasDrawing = drawing;
-        drawing = false;
-        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
-        if (stopPrediction)
-            stopPrediction = false;
-        else if (isModelLoaded && wasDrawing && !drawing)
-            predict();
-    });
-
-
-    /** Touch events for touch devices. */
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-
-        if (!isModelLoaded)
-            return ;
-
-        drawing = true;
-        haveAlreadyPredicted = false;
-        stopPrediction = false;
-
-        let clientRect = canvas.getBoundingClientRect();
-        let touch = e.touches[0];
-        let x = touch.pageX - clientRect.x;
-        let y = touch.pageY - clientRect.y;
-        lastPosition = { x, y };
-    });
-
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-
-        if (!drawing)
-            return ;
-
-        let clientRect = canvas.getBoundingClientRect();
-        let touch = e.touches[0];
-        let x = touch.pageX - clientRect.x;
-        let y = touch.pageY - clientRect.y;
-        ctx.beginPath();
-        ctx.moveTo(lastPosition.x, lastPosition.y);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        lastPosition = { x, y };
-    });
-
-    canvas.addEventListener('touchend', async () => {
-        let wasDrawing = drawing;
-        drawing = false;
-        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_ON_STOP_DRAWING);
-        if (stopPrediction)
-            stopPrediction = false;
-        else if (isModelLoaded && wasDrawing && !drawing)
-            predict();
-    });
-}
-
-
-function createButton(innerText, selector, id, listener, disabled = false)
-{
-    const btn = document.createElement('BUTTON');
-    btn.innerText = innerText;
-    btn.id = id;
-    btn.disabled = disabled;
-    btn.addEventListener('click', listener);
-    document.querySelector(selector).appendChild(btn);
-}
-
-
-function enableButton(selector)
-{
-    // Activates a button
+function enableButton(selector) {
     document.getElementById(selector).disabled = false;
 }
 
 
-function disableButton(selector)
-{
-    // Disables a button
+function disableButton(selector) {
     document.getElementById(selector).disabled = true;
 }
 
 
-async function loadModel()
-{
-    const canvas = document.getElementById('draw-canvas');
-
-    // Load the model saved at `PATH_TO_THE_MODEL`
-    model = await tf.loadLayersModel(PATH_TO_THE_MODEL);
-
-    if (LOGS)
-        console.log("Info: The model was loaded successfully!");
-
-    canvas.title = '';
-    canvas.style.cursor = 'crosshair';
-
-    isModelLoaded = true;
-    enableButton('clear-btn');
-    printOutput();
+function resizeCanvas(maxCanvasSize=400, maxCTXSize=22, canvas=undefined, ctx=undefined) {
+    const _canvas = canvas || document.getElementById('draw-canvas');
+    const _ctx = ctx || _canvas.getContext('2d');
+    _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize, 30);
+    _ctx.lineWidth = calculateNewCtxSize(maxCTXSize, maxCanvasSize);
+    _ctx.strokeStyle = 'white';
+    _ctx.fillStyle = 'white';
+    _ctx.lineJoin = 'round';
+    _ctx.lineCap = 'round';
 }
 
 
-async function predict()
-{
+function checkHalt() {
+    if (haltPrediction === true) {
+        haltPrediction = false;
+        return true;
+    }
+    return false;
+}
+
+
+function writeLog(message, showTime=true) {
+    if (SHOW_LOGS === false)
+        return false;
+    const date = new Date();
+    const time = `${(date.getUTCHours() + ':' + date.getUTCMinutes() + ':' + date.getUTCSeconds())} - `;
+    console.log(showTime ? time + message : message);
+    return true;
+}
+
+
+function getDigitName(number) {
+    return {0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
+        5: 'Five', 6: 'Six',7: 'Seven', 8: 'Eight', 9: 'Nine'
+    }[number];
+}
+
+
+function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOnMouseUp=1200) {
+    const _canvas = canvas || document.getElementById('draw-canvas');
+    const ctx = _canvas.getContext('2d');
+
+    _canvas.addEventListener('mousedown', (e) => {
+        if (modelWasLoaded === false)
+            return ;
+        drawing = true;
+        haltPrediction = false;
+        havePredictLastDraw = false;
+        lastPos = { x: e.offsetX, y: e.offsetY };
+    });
+
+    _canvas.addEventListener('mouseout', async () => {
+        const wasDrawing = drawing;
+        drawing = false;
+        await sleep(sleepTimeOnMouseOut);
+        if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
+            predictImage();
+    });
+
+    _canvas.addEventListener('mousemove', (e) => {
+        if (drawing === false)
+            return ;
+        ctx.beginPath();
+        ctx.moveTo(lastPos.x, lastPos.y);
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        lastPos = { x: e.offsetX, y: e.offsetY };
+    });
+
+    _canvas.addEventListener('mouseup', async () => {
+        const wasDrawing = drawing;
+        drawing = false;
+        await sleep(sleepTimeOnMouseUp);
+        if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
+            predictImage();
+    });
+
+    _canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (modelWasLoaded === false)
+            return ;
+        drawing = true;
+        havePredictLastDraw = false;
+        haltPrediction = false;
+        const clientRect = _canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        let x = touch.pageX - clientRect.x;
+        let y = touch.pageY - clientRect.y;
+        lastPos = { x, y };
+    });
+
+    _canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (drawing === false)
+            return ;
+        const clientRect = _canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        let x = touch.pageX - clientRect.x;
+        let y = touch.pageY - clientRect.y;
+        ctx.beginPath();
+        ctx.moveTo(lastPos.x, lastPos.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        lastPos = { x, y };
+    });
+
+    _canvas.addEventListener('touchend', async () => {
+        const wasDrawing = drawing;
+        drawing = false;
+        await sleep(sleepTimeOnMouseUp);
+        if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
+            predictImage();
+    });
+}
+
+
+async function loadDigitRecognizerModel(path='./data/compiled/model.json') {
     const canvas = document.getElementById('draw-canvas');
-
-    // Get the canvas image from pixels and apply some transformations necessary for being
-    // a good input on the model.
-    // Below can be used either `resizeBilinear` or `resizeNearestNeighbor` for resizing the image.
-    const InPut = tf.browser.fromPixels(canvas).resizeBilinear(IMAGE_RESIZE_SHAPE)
-        .mean(2).pad(PADDING).expandDims().expandDims(3).toFloat().div(255.0);
-
-
-    if (!isModelLoaded || drawing)
-        return ;
-    else if (InPut.sum().dataSync()[0] === 0) {
-        // The condition above checks if the sum of all pixels on the canvas is equal to zero,
-        // if true that means that nothing is drawn on the canvas.
-        printOutput('<strong>TIP</strong>: Click and Hold to draw');
-        return ;
-    }
-    else
-        disableButton('clear-btn');
-
-
-    // HaveAlreadyPredicted prevents the same prediction to be predicted again
-    if (haveAlreadyPredicted === false) {
-        printOutput('Analyzing The Drawing(<strong>...</strong>)');
-        await sleep(TIME_TO_WAIT_BEFORE_PREDICT_THE_IMAGE);
-    } else
-        haveAlreadyPredicted = false;
-
-
-    if (stopPrediction) {
-        stopPrediction = false;
-        enableButton('clear-btn');
-        printOutput();
-        return ;
-    }
-
-    // Prevents high usage of gpu
-    tf.engine().startScope();
-
-    // ForwardPropagates the input and return the output with ten probabilities,
-    // corresponding on the probability of being each of the ten digits.
-    const predictions = model.predict(InPut).dataSync();
-
-    // The predicted number will be the index which has the greater probability
-    const predictedNumber = tf.argMax(predictions).dataSync();
-
-    // The greater probability represents how certain the model is on its prediction
-    const greaterProbability = tf.max(predictions).dataSync()[0];
-
-    printOutput(`The number drawn is <strong>${predictedNumber}</strong> (<strong>${GetNumberVoc[predictedNumber]}</strong>)`);
-
-    // Prevents high usage of gpu
-    tf.engine().endScope();
-
-    if (LOGS)
-    {
-        const d = new Date();
-
-        console.log(`At (${d.getUTCHours() - 1}:${d.getUTCMinutes()}:${d.getUTCSeconds()})\n` +
-        `* Prediction: ${predictedNumber}\n` + `* Certainty: ${(greaterProbability.toPrecision(4) * 100)}%`);
-    }
-
+    model = await tf.loadLayersModel(path);
+    writeLog("Info: The model was loaded successfully!");
+    canvas.style.cursor = 'crosshair';
+    modelWasLoaded = true;
     enableButton('clear-btn');
-    haveAlreadyPredicted = true;
+    OutSection.printDefaultMessage();
+}
+
+
+async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefined)
+{
+    const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
+    const paddingShape = [[padding, padding], [padding, padding]]
+    const _canvas = canvas || document.getElementById('draw-canvas');
+    // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
+    // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
+    const InPut = tf.browser.fromPixels(_canvas).resizeBilinear(inputShape)
+        .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
+
+    try {
+        if (modelWasLoaded === false || drawing === true)
+            throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
+        else if (InPut.sum().dataSync()[0] === 0) {
+            // The condition above checks if the sum of all pixels on the canvas is equal to zero,
+            // if true that means that nothing is drawn on the canvas.
+            OutSection.print('<strong>TIP</strong>: Click and Hold to draw');
+            throw Error('Canvas has no drawing, prediction canceled!');
+        }
+
+        disableButton('clear-btn');
+        
+        if (havePredictLastDraw === false) {
+            OutSection.print('Analyzing The Drawing(<strong>...</strong>)');
+            await sleep(waitTime);
+        } else
+            havePredictLastDraw = false;
+        
+        if (haltPrediction === true) {
+            haltPrediction = false;
+            enableButton('clear-btn');
+            OutSection.printDefaultMessage();
+            throw Error('Halt Received, prediction was canceled!');
+        }
+    } catch (error) {
+        writeLog(error);
+        return false;
+    }
+
+    tf.engine().startScope(); //Prevents high usage of gpu
+    const softmax = model.predict(InPut).dataSync();
+    const prediction = tf.argMax(softmax).dataSync();
+    const probability = tf.max(softmax).dataSync()[0];
+    OutSection.print(
+        `The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)`
+    );
+    tf.engine().endScope(); //Prevents high usage of gpu
+
+    writeLog(`Prediction: ${prediction} ... Certainty: ${(probability.toPrecision(4) * 100)}%`);
+    enableButton('clear-btn');
+    havePredictLastDraw = true;
 }
 
 
 /**
- * @info Function which initialize the program
+ * @info Running the Web Application
  */
-(function () {
-    prepareCanvas();
-    resizePage();
-
+(function () { resizeHTML(); resizeCanvas(); setCanvasEvents();
+    const canvas = document.getElementById('draw-canvas');
+    const ctx = canvas.getContext('2d');
     const clearBtn = document.getElementById('clear-btn');
-    const output = document.getElementById('predict-output');
+    const output = document.getElementById('output');
     const pipe = document.getElementById('pipeline');
-
-    let width = `${getCanvasSize()}px`;
+    let width = `${calculateNewCanvasSize()}px`;
     output.style.width = width;
     pipe.style.width = width;
 
     clearBtn.addEventListener('click', () => {
-        const SIZE = getCanvasSize();
-        ctx.clearRect(0, 0, SIZE, SIZE);
-
-        if (isModelLoaded)
-            printOutput();
-
-        stopPrediction = true;
+        ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
+        if (modelWasLoaded === true)
+            OutSection.printDefaultMessage();
+        haltPrediction = true;
     });
 
     window.addEventListener('resize', () => {
-        width = `${getCanvasSize()}px`;
+        width = `${calculateNewCanvasSize()}px`;
         output.style.width = width;
         pipe.style.width = width;
-
-        resizeCanvas();
-        resizePage();
-
-        if (isModelLoaded)
-            printOutput();
+        resizeCanvas(); resizeHTML();
+        if (modelWasLoaded === true)
+            OutSection.printDefaultMessage();
     });
-
-    if (LOGS)
-        console.log('Welcome to the Digit Recognition Web App!');
-
-    // Load the model at last
-    loadModel();
+    loadDigitRecognizerModel();
+    writeLog('Welcome to the Digit Recognition Web App!');
 })();
