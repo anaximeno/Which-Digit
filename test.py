@@ -21,12 +21,17 @@ print('Keras:', keras.__version__)
 
 
 IMAGES_DIR_PATH = 'data/testdata/'
-PATH_TO_MODEL = 'data/models/Mnet_v3.h5'
+PATH_TO_MODEL = 'data/models/model.h5'
 INPUT_SIZE = 36
 IMAGE_RESIZE_TO = 34
 IMAGE_PADDING = 1
 # Below I added zeros on the last padding for the last dimension of the image when it is loaded
 PADDING = [[IMAGE_PADDING, IMAGE_PADDING], [IMAGE_PADDING, IMAGE_PADDING], [0, 0]]
+
+
+if os.path.exists(PATH_TO_MODEL) is False:
+    print('Model was not found, if you have dvc try to pull it from the server using the command:\n $ dvc pull')
+    exit(1)
 
 
 def test_sizes():

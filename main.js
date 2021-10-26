@@ -260,10 +260,10 @@ async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefi
 }
 
 
-/**
- * @info Running the Web Application
- */
-(function () { resizeHTML(); resizeCanvas(); setCanvasEvents();
+/***
+ * @info main function
+ ***/
+(function (welcomeMessage) { resizeHTML(); resizeCanvas(); setCanvasEvents();
     const canvas = document.getElementById('draw-canvas');
     const ctx = canvas.getContext('2d');
     const clearBtn = document.getElementById('clear-btn');
@@ -289,5 +289,5 @@ async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefi
             OutSection.printDefaultMessage();
     });
     loadDigitRecognizerModel();
-    writeLog('Welcome to the Digit Recognition Web App!');
-})();
+    writeLog(welcomeMessage);
+})('Welcome to the Digit Recognition Web App!');

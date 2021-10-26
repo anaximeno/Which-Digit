@@ -2,4 +2,3 @@
 *-Testing-*
 __pycache__/
 .pytest_cache/
-.dvc/tmp/
