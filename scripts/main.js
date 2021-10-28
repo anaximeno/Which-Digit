@@ -65,7 +65,7 @@ function calculateNewCanvasSize(maxSize=400, increaseSize=30) {
 
 
 function calculateNewCtxSize(maxCTXSize=22, maxCanvasSize=400) {
-    return (calculateNewCanvasSize(maxCanvasSize, 30) * maxCTXSize) / maxCanvasSize;
+    return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
 }
 
 
@@ -79,10 +79,10 @@ function disableButton(selector) {
 }
 
 
-function resizeCanvas(maxCanvasSize=400, maxCTXSize=22, canvas=undefined, ctx=undefined) {
+function resizeCanvas(canvas=undefined, maxCanvasSize=400, maxCTXSize=22) {
     const _canvas = canvas || document.getElementById('draw-canvas');
-    const _ctx = ctx || _canvas.getContext('2d');
-    _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize, 30);
+    const _ctx = _canvas.getContext('2d');
+    _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize);
     _ctx.lineWidth = calculateNewCtxSize(maxCTXSize, maxCanvasSize);
     _ctx.strokeStyle = 'white';
     _ctx.fillStyle = 'white';
@@ -103,8 +103,11 @@ function checkHalt() {
 function writeLog(message, showTime=true) {
     if (SHOW_LOGS === false)
         return false;
+    function standardTime(time) {
+        return time < 10 ? '0'+time : time;
+    }
     const date = new Date();
-    const time = `${(date.getUTCHours() + ':' + date.getUTCMinutes() + ':' + date.getUTCSeconds())} - `;
+    const time = `${(standardTime(date.getUTCHours() - 1) + ':' + standardTime(date.getUTCMinutes()) + ':' + standardTime(date.getUTCSeconds()))} - `;
     console.log(showTime ? time + message : message);
     return true;
 }
@@ -135,7 +138,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
         drawing = false;
         await sleep(sleepTimeOnMouseOut);
         if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-            predictImage();
+            predictImage(_canvas);
     });
 
     _canvas.addEventListener('mousemove', (e) => {
@@ -153,7 +156,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
         drawing = false;
         await sleep(sleepTimeOnMouseUp);
         if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-            predictImage();
+            predictImage(_canvas);
     });
 
     _canvas.addEventListener('touchstart', (e) => {
@@ -190,7 +193,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
         drawing = false;
         await sleep(sleepTimeOnMouseUp);
         if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-            predictImage();
+            predictImage(_canvas);
     });
 }
 
@@ -198,7 +201,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
 async function loadDigitRecognizerModel(path='./data/compiled/model.json') {
     const canvas = document.getElementById('draw-canvas');
     model = await tf.loadLayersModel(path);
-    writeLog("Info: The model was loaded successfully!");
+    writeLog("The model was loaded successfully!");
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
     enableButton('clear-btn');
@@ -206,10 +209,10 @@ async function loadDigitRecognizerModel(path='./data/compiled/model.json') {
 }
 
 
-async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefined)
+async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=200)
 {
     const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
-    const paddingShape = [[padding, padding], [padding, padding]]
+    const paddingShape = [[padding, padding], [padding, padding]];
     const _canvas = canvas || document.getElementById('draw-canvas');
     // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
     // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
@@ -234,8 +237,7 @@ async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefi
         } else
             havePredictLastDraw = false;
         
-        if (haltPrediction === true) {
-            haltPrediction = false;
+        if (checkHalt() === true) {
             enableButton('clear-btn');
             OutSection.printDefaultMessage();
             throw Error('Halt Received, prediction was canceled!');
@@ -254,7 +256,7 @@ async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefi
     );
     tf.engine().endScope(); //Prevents high usage of gpu
 
-    writeLog(`Prediction: ${prediction} ... Certainty: ${(probability.toPrecision(4) * 100)}%`);
+    writeLog(`Prediction: ${prediction} ... Certainty: ${(probability.toPrecision(4) * 100)}%`, false);
     enableButton('clear-btn');
     havePredictLastDraw = true;
 }
@@ -263,31 +265,32 @@ async function predictImage(inputSize=36, padding=1, waitTime=200, canvas=undefi
 /***
  * @info main function
  ***/
-(function (welcomeMessage) { resizeHTML(); resizeCanvas(); setCanvasEvents();
+(function (welcomeMessage) { resizeHTML();
     const canvas = document.getElementById('draw-canvas');
     const ctx = canvas.getContext('2d');
+    setCanvasEvents(canvas);
+    resizeCanvas(canvas);
     const clearBtn = document.getElementById('clear-btn');
     const output = document.getElementById('output');
     const pipe = document.getElementById('pipeline');
     let width = `${calculateNewCanvasSize()}px`;
     output.style.width = width;
     pipe.style.width = width;
-
     clearBtn.addEventListener('click', () => {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
             OutSection.printDefaultMessage();
         haltPrediction = true;
     });
-
     window.addEventListener('resize', () => {
         width = `${calculateNewCanvasSize()}px`;
         output.style.width = width;
         pipe.style.width = width;
-        resizeCanvas(); resizeHTML();
+        resizeCanvas(canvas); resizeHTML();
         if (modelWasLoaded === true)
             OutSection.printDefaultMessage();
     });
     loadDigitRecognizerModel();
+    console.log(`Logs are ${SHOW_LOGS === true? 'enabled' : 'disabled'}!`);
     writeLog(welcomeMessage);
 })('Welcome to the Digit Recognition Web App!');
