@@ -107,7 +107,7 @@ function writeLog(message, showTime=true) {
         return time < 10 ? '0'+time : time;
     }
     const date = new Date();
-    const time = `${(standardTime(date.getUTCHours() - 1) + ':' + standardTime(date.getUTCMinutes()) + ':' + standardTime(date.getUTCSeconds()))} - `;
+    const time = `${standardTime(date.getUTCHours() - 1)}:${standardTime(date.getUTCMinutes())}:${standardTime(date.getUTCSeconds())} - `;
     console.log(showTime ? time + message : message);
     return true;
 }
@@ -230,13 +230,13 @@ async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=
         }
 
         disableButton('clear-btn');
-        
+
         if (havePredictLastDraw === false) {
             OutSection.print('Analyzing The Drawing(<strong>...</strong>)');
             await sleep(waitTime);
         } else
             havePredictLastDraw = false;
-        
+
         if (checkHalt() === true) {
             enableButton('clear-btn');
             OutSection.printDefaultMessage();
@@ -291,6 +291,6 @@ async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=
             OutSection.printDefaultMessage();
     });
     loadDigitRecognizerModel();
-    console.log(`Logs are ${SHOW_LOGS === true? 'enabled' : 'disabled'}!`);
+    console.log(`Logs ${SHOW_LOGS === true? 'enabled' : 'disabled'}.`);
     writeLog(welcomeMessage);
 })('Welcome to the Digit Recognition Web App!');
