@@ -9,6 +9,7 @@ let haltPrediction: boolean = false;
 let havePredictLastDraw: boolean = false;
 let lastPos: PositionalInteface = {x: 0, y: 0};
 let model: any;
+let firstPrediction: boolean = true;
 
 
 class OutputSectionController {
@@ -249,7 +250,10 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
 
         if (havePredictLastDraw === false) {
             Out.print('Analyzing The Drawing(<strong>...</strong>)');
-            await sleep(waitTime);
+            if (firstPrediction === false)
+                await sleep(waitTime);
+            else // Don't sleep in the first prediction
+                firstPrediction = false;
         } else
             havePredictLastDraw = false;
 

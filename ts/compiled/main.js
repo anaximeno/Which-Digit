@@ -42,6 +42,7 @@ var haltPrediction = false;
 var havePredictLastDraw = false;
 var lastPos = { x: 0, y: 0 };
 var model;
+var firstPrediction = true;
 var OutputSectionController = (function () {
     function OutputSectionController(id, defaultMsg) {
         this.selector = id;
@@ -289,7 +290,7 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 5, , 6]);
+                    _a.trys.push([1, 7, , 8]);
                     if (modelWasLoaded === false || drawing === true)
                         throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
                     else if (InPut.sum().dataSync()[0] === 0) {
@@ -297,27 +298,32 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                         throw Error('Canvas has no drawing, prediction canceled!');
                     }
                     disableButton('clear-btn');
-                    if (!(havePredictLastDraw === false)) return [3, 3];
+                    if (!(havePredictLastDraw === false)) return [3, 5];
                     Out.print('Analyzing The Drawing(<strong>...</strong>)');
+                    if (!(firstPrediction === false)) return [3, 3];
                     return [4, sleep(waitTime)];
                 case 2:
                     _a.sent();
                     return [3, 4];
                 case 3:
-                    havePredictLastDraw = false;
+                    firstPrediction = false;
                     _a.label = 4;
-                case 4:
+                case 4: return [3, 6];
+                case 5:
+                    havePredictLastDraw = false;
+                    _a.label = 6;
+                case 6:
                     if (checkHalt() === true) {
                         enableButton('clear-btn');
                         Out.printDefaultMessage();
                         throw Error('Halt Received, prediction was canceled!');
                     }
-                    return [3, 6];
-                case 5:
+                    return [3, 8];
+                case 7:
                     error_1 = _a.sent();
                     writeLog(error_1);
                     return [2, false];
-                case 6:
+                case 8:
                     tf.engine().startScope();
                     output = model.predict(InPut).dataSync();
                     prediction = tf.argMax(output).dataSync();
