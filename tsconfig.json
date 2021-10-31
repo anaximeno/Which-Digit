@@ -1,9 +1,9 @@
 {
 	"compilerOptions": {
-		"outFile": "ts/compiled/main.js",
+		"outFile": "./src/scripts/compiled/main.js",
 		"lib": ["es2016", "dom"],
 		"removeComments": true,
 		"sourceMap": true
 	},
-	"file": ["ts/main.ts"]
+	"file": ["./src/scripts/main.ts"]
 }

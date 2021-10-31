@@ -226,7 +226,7 @@ async function loadDigitRecognizerModel(path: string = './data/compiled/model.js
 }
 
 
-async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 3, waitTime: number = 200)
+async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 4, waitTime: number = 200)
 {
     const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape: number[][] = [[padding, padding], [padding, padding]];
