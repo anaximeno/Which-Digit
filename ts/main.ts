@@ -1,4 +1,4 @@
-const SHOW_LOGS = false;
+const SHOW_LOGS = true;
 interface PositionalInteface {
     x: number;
     y: number;
@@ -225,14 +225,14 @@ async function loadDigitRecognizerModel(path: string = './data/compiled/model.js
 }
 
 
-async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 1, waitTime: number = 200)
+async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 3, waitTime: number = 200)
 {
     const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape: number[][] = [[padding, padding], [padding, padding]];
     const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
     // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
-    const InPut = tf.browser.fromPixels(_canvas).resizeBilinear(inputShape)
+    const InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
 
     try {

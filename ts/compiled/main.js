@@ -34,7 +34,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var SHOW_LOGS = false;
+var SHOW_LOGS = true;
 ;
 var modelWasLoaded = false;
 var drawing = false;
@@ -275,7 +275,7 @@ function loadDigitRecognizerModel(path) {
 function predictImage(canvas, inputSize, padding, waitTime) {
     if (canvas === void 0) { canvas = undefined; }
     if (inputSize === void 0) { inputSize = 36; }
-    if (padding === void 0) { padding = 1; }
+    if (padding === void 0) { padding = 3; }
     if (waitTime === void 0) { waitTime = 200; }
     return __awaiter(this, void 0, void 0, function () {
         var inputShape, paddingShape, _canvas, InPut, error_1, output, prediction, probability;
@@ -285,7 +285,7 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     inputShape = [inputSize - 2 * padding, inputSize - 2 * padding];
                     paddingShape = [[padding, padding], [padding, padding]];
                     _canvas = canvas || document.getElementById('draw-canvas');
-                    InPut = tf.browser.fromPixels(_canvas).resizeBilinear(inputShape)
+                    InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
                         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
                     _a.label = 1;
                 case 1:
@@ -363,3 +363,4 @@ function predictImage(canvas, inputSize, padding, waitTime) {
     console.log("Logs " + (SHOW_LOGS ? 'enabled' : 'disabled') + ".");
     writeLog(welcomeMessage);
 })('Welcome to the Digit Recognition Web App!');
+//# sourceMappingURL=main.js.map
