@@ -1,0 +1,8 @@
+{
+	"compilerOptions": {
+		"outFile": "ts/compiled/main.js",
+		"lib": ["es2016", "dom"],
+		"removeComments": true
+	},
+	"file": ["ts/main.ts"]
+}

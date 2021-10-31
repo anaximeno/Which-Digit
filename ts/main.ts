@@ -1,87 +1,102 @@
-const SHOW_LOGS = true;
-let modelWasLoaded = false;
-let drawing = false;
-let haltPrediction = false;
-let havePredictLastDraw = false;
-let lastPos = {x: 0, y: 0};
-let model;
+const SHOW_LOGS = false;
+interface PositionalInteface {
+    x: number;
+    y: number;
+};
+let modelWasLoaded: boolean = false;
+let drawing: boolean = false;
+let haltPrediction: boolean = false;
+let havePredictLastDraw: boolean = false;
+let lastPos: PositionalInteface = {x: 0, y: 0};
+let model: any;
 
 
-const OutSection = new class {
-    constructor(id, defaultMsg) {
-        this._element = document.getElementById(id);
-        this._defaultMsg = defaultMsg;
+class OutputSectionController {
+    private readonly selector: string;
+    private readonly defaultMessage: string;
+    private readonly element: HTMLElement;
+    constructor(id: string, defaultMsg: string) {
+        this.selector = id;
+        this.element = document.getElementById(this.selector);
+        this.defaultMessage = defaultMsg;
     }
-    print(message) {
-        this._element.innerHTML = message;
+    print(message: string) {
+        this.element.innerHTML = message;
     }
     printDefaultMessage() {
-        this.print(this._defaultMsg)
+        this.print(this.defaultMessage);
     }
-}('output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>');
+};
 
 
-function sleep(milisecs) {
+const Out: OutputSectionController = new OutputSectionController(
+    'output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>'
+);
+
+
+function sleep(milisecs: number): any {
     // Stops the execution by 'milisecs' miliseconds.
     return new Promise(resolve => setTimeout(resolve, milisecs));
 }
 
 
-function min(...args)
+function min(...args: number[]): number
 {
     if (args.length < 2)
         throw Error('At least 2 elements are required for calculating the minimum!');
-    let minimun = args[0];
+    let minimun: number = args[0];
     for (let i = 1 ; i < args.length ; ++i)
         minimun = minimun > args[i] ? args[i] : minimun;
     return minimun;
 }
 
 
-function max(...args)
+function max(...args: number[]): number
 {
     if (args.length < 2)
         throw Error('At least 2 elements are required for calculating the maximum!');
-    let maximum = args[0];
+    let maximum: number = args[0];
     for (let i = 1 ; i < args.length ; ++i)
         maximum = maximum < args[i] ? args[i] : maximum;
     return maximum;
 }
 
 
-function resizeHTML(pageAddSize=285) {
-    const main = document.getElementsByTagName('html')[0];
-    const innerH = window.innerHeight;
+function resizeHTML(pageAddSize: number = 285) {
+    const main: HTMLElement = document.getElementsByTagName('html')[0];
+    const innerH: number = window.innerHeight;
     main.style.height = `${max(innerH, pageAddSize + calculateNewCanvasSize())}px`;
 }
 
 
-function calculateNewCanvasSize(maxSize=400, increaseSize=30) {
-    const innerW = window.innerWidth;
-    const outerW = window.outerWidth;
-    const width = min(innerW, outerW) || innerW;
+function calculateNewCanvasSize(maxSize: number = 400, increaseSize: number = 30): number {
+    const innerW: number = window.innerWidth;
+    const outerW: number = window.outerWidth;
+    const width: number = min(innerW, outerW) || innerW;
     return width > (maxSize + increaseSize) ? maxSize : (width - increaseSize);
 }
 
 
-function calculateNewCtxSize(maxCTXSize=22, maxCanvasSize=400) {
+function calculateNewCtxSize(maxCTXSize: number = 22, maxCanvasSize: number = 400): number {
     return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
 }
 
 
-function enableButton(selector) {
-    document.getElementById(selector).disabled = false;
+function enableButton(selector: string) {
+    const button: HTMLButtonElement = (document.getElementById(selector) as unknown) as HTMLButtonElement;
+    button.disabled = false;
 }
 
 
-function disableButton(selector) {
-    document.getElementById(selector).disabled = true;
+function disableButton(selector: string) {
+    const button: HTMLButtonElement = (document.getElementById(selector) as unknown) as HTMLButtonElement;
+    button.disabled = true;
 }
 
 
-function resizeCanvas(canvas=undefined, maxCanvasSize=400, maxCTXSize=22) {
-    const _canvas = canvas || document.getElementById('draw-canvas');
-    const _ctx = _canvas.getContext('2d');
+function resizeCanvas(canvas: HTMLCanvasElement = undefined, maxCanvasSize: number = 400, maxCTXSize: number = 22) {
+    const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    const _ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
     _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize);
     _ctx.lineWidth = calculateNewCtxSize(maxCTXSize, maxCanvasSize);
     _ctx.strokeStyle = 'white';
@@ -91,7 +106,7 @@ function resizeCanvas(canvas=undefined, maxCanvasSize=400, maxCTXSize=22) {
 }
 
 
-function checkHalt() {
+function checkHalt(): boolean {
     if (haltPrediction === true) {
         haltPrediction = false;
         return true;
@@ -100,29 +115,30 @@ function checkHalt() {
 }
 
 
-function writeLog(message, showTime=true) {
-    if (SHOW_LOGS === false)
-        return false;
-    function standardTime(time) {
+function writeLog(message: string, showTime: boolean = true): boolean {
+    if (!SHOW_LOGS) return false;
+    const date = new Date();
+    const standardrize = (time: number): string | number => {
         return time < 10 ? '0'+time : time;
     }
-    const date = new Date();
-    const time = `${standardTime(date.getUTCHours() - 1)}:${standardTime(date.getUTCMinutes())}:${standardTime(date.getUTCSeconds())} - `;
-    console.log(showTime ? time + message : message);
+    const hour = standardrize(date.getUTCHours() - 1);
+    const minutes = standardrize(date.getUTCMinutes());
+    const seconds = standardrize(date.getUTCSeconds());
+    console.log(showTime ? `${hour}:${minutes}:${seconds} - ` + message : message);
     return true;
 }
 
 
-function getDigitName(number) {
+function getDigitName(number: number): string {
     return {0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
         5: 'Five', 6: 'Six',7: 'Seven', 8: 'Eight', 9: 'Nine'
     }[number];
 }
 
 
-function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOnMouseUp=1200) {
-    const _canvas = canvas || document.getElementById('draw-canvas');
-    const ctx = _canvas.getContext('2d');
+function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1200): void {
+    const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    const ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
 
     _canvas.addEventListener('mousedown', (e) => {
         if (modelWasLoaded === false)
@@ -134,7 +150,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
     });
 
     _canvas.addEventListener('mouseout', async () => {
-        const wasDrawing = drawing;
+        const wasDrawing: boolean = drawing;
         drawing = false;
         await sleep(sleepTimeOnMouseOut);
         if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
@@ -152,7 +168,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
     });
 
     _canvas.addEventListener('mouseup', async () => {
-        const wasDrawing = drawing;
+        const wasDrawing: boolean = drawing;
         drawing = false;
         await sleep(sleepTimeOnMouseUp);
         if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
@@ -166,10 +182,10 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
         drawing = true;
         havePredictLastDraw = false;
         haltPrediction = false;
-        const clientRect = _canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        let x = touch.pageX - clientRect.x;
-        let y = touch.pageY - clientRect.y;
+        const clientRect: DOMRect = _canvas.getBoundingClientRect();
+        const touch: Touch = e.touches[0];
+        let x: number = touch.pageX - clientRect.x;
+        let y: number = touch.pageY - clientRect.y;
         lastPos = { x, y };
     });
 
@@ -177,10 +193,10 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
         e.preventDefault();
         if (drawing === false)
             return ;
-        const clientRect = _canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        let x = touch.pageX - clientRect.x;
-        let y = touch.pageY - clientRect.y;
+        const clientRect: DOMRect = _canvas.getBoundingClientRect();
+        const touch: Touch = e.touches[0];
+        let x: number = touch.pageX - clientRect.x;
+        let y: number = touch.pageY - clientRect.y;
         ctx.beginPath();
         ctx.moveTo(lastPos.x, lastPos.y);
         ctx.lineTo(x, y);
@@ -189,7 +205,7 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
     });
 
     _canvas.addEventListener('touchend', async () => {
-        const wasDrawing = drawing;
+        const wasDrawing: boolean = drawing;
         drawing = false;
         await sleep(sleepTimeOnMouseUp);
         if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
@@ -198,22 +214,22 @@ function setCanvasEvents(canvas=undefined, sleepTimeOnMouseOut=1500, sleepTimeOn
 }
 
 
-async function loadDigitRecognizerModel(path='./data/compiled/model.json') {
-    const canvas = document.getElementById('draw-canvas');
+async function loadDigitRecognizerModel(path: string = './data/compiled/model.json') {
+    const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     model = await tf.loadLayersModel(path);
     writeLog("The model was loaded successfully!");
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
     enableButton('clear-btn');
-    OutSection.printDefaultMessage();
+    Out.printDefaultMessage();
 }
 
 
-async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=200)
+async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 1, waitTime: number = 200)
 {
-    const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
-    const paddingShape = [[padding, padding], [padding, padding]];
-    const _canvas = canvas || document.getElementById('draw-canvas');
+    const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
+    const paddingShape: number[][] = [[padding, padding], [padding, padding]];
+    const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
     // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
     const InPut = tf.browser.fromPixels(_canvas).resizeBilinear(inputShape)
@@ -225,21 +241,21 @@ async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=
         else if (InPut.sum().dataSync()[0] === 0) {
             // The condition above checks if the sum of all pixels on the canvas is equal to zero,
             // if true that means that nothing is drawn on the canvas.
-            OutSection.print('<strong>TIP</strong>: Click and Hold to draw');
+            Out.print('<strong>TIP</strong>: Click and Hold to draw.');
             throw Error('Canvas has no drawing, prediction canceled!');
         }
 
         disableButton('clear-btn');
 
         if (havePredictLastDraw === false) {
-            OutSection.print('Analyzing The Drawing(<strong>...</strong>)');
+            Out.print('Analyzing The Drawing(<strong>...</strong>)');
             await sleep(waitTime);
         } else
             havePredictLastDraw = false;
 
         if (checkHalt() === true) {
             enableButton('clear-btn');
-            OutSection.printDefaultMessage();
+            Out.printDefaultMessage();
             throw Error('Halt Received, prediction was canceled!');
         }
     } catch (error) {
@@ -248,15 +264,15 @@ async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=
     }
 
     tf.engine().startScope(); //Prevents high usage of gpu
-    const softmax = model.predict(InPut).dataSync();
-    const prediction = tf.argMax(softmax).dataSync();
-    const probability = tf.max(softmax).dataSync()[0];
-    OutSection.print(
+    const output: number = model.predict(InPut).dataSync();
+    const prediction: number = tf.argMax(output).dataSync();
+    const probability: number = tf.max(output).dataSync()[0];
+    Out.print(
         `The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)`
     );
     tf.engine().endScope(); //Prevents high usage of gpu
 
-    writeLog(`Prediction: ${prediction} ... Certainty: ${(probability.toPrecision(4) * 100)}%`, false);
+    writeLog(`Prediction: ${prediction} ... Certainty: ${(parseFloat(probability.toPrecision(4)) * 100)}%`, false);
     enableButton('clear-btn');
     havePredictLastDraw = true;
 }
@@ -265,21 +281,21 @@ async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=
 /***
  * @info main function
  ***/
-(function (welcomeMessage) { resizeHTML();
-    const canvas = document.getElementById('draw-canvas');
-    const ctx = canvas.getContext('2d');
+(function (welcomeMessage: string) { resizeHTML();
+    const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
     setCanvasEvents(canvas);
     resizeCanvas(canvas);
-    const clearBtn = document.getElementById('clear-btn');
-    const output = document.getElementById('output');
-    const pipe = document.getElementById('pipeline');
-    let width = `${calculateNewCanvasSize()}px`;
+    const clearBtn: HTMLButtonElement = (document.getElementById('clear-btn') as unknown) as HTMLButtonElement;
+    const output: HTMLElement = document.getElementById('output');
+    const pipe: HTMLElement = document.getElementById('pipeline');
+    let width: string = `${calculateNewCanvasSize()}px`;
     output.style.width = width;
     pipe.style.width = width;
     clearBtn.addEventListener('click', () => {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
-            OutSection.printDefaultMessage();
+            Out.printDefaultMessage();
         haltPrediction = true;
     });
     window.addEventListener('resize', () => {
@@ -288,9 +304,9 @@ async function predictImage(canvas=undefined, inputSize=36, padding=1, waitTime=
         pipe.style.width = width;
         resizeCanvas(canvas); resizeHTML();
         if (modelWasLoaded === true)
-            OutSection.printDefaultMessage();
+            Out.printDefaultMessage();
     });
     loadDigitRecognizerModel();
-    console.log(`Logs ${SHOW_LOGS === true? 'enabled' : 'disabled'}.`);
+    console.log(`Logs ${SHOW_LOGS ? 'enabled' : 'disabled'}.`);
     writeLog(welcomeMessage);
 })('Welcome to the Digit Recognition Web App!');
