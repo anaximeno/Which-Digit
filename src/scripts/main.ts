@@ -14,8 +14,8 @@ let firstPrediction: boolean = true;
 
 class OutputSectionController {
     private readonly selector: string;
-    private readonly defaultMessage: string;
-    private readonly element: HTMLElement;
+    protected readonly defaultMessage: string;
+    protected readonly element: HTMLElement;
     constructor(id: string, defaultMsg: string) {
         this.selector = id;
         this.element = document.getElementById(this.selector);
@@ -30,9 +30,29 @@ class OutputSectionController {
 };
 
 
+class ButtonControler extends OutputSectionController {
+    protected readonly _element: HTMLButtonElement;
+    constructor(id: string, defaultMsg: string) {
+        super(id, defaultMsg);
+        this._element = (this.element as unknown) as HTMLButtonElement;
+    }
+    enable() {
+        this._element.disabled = false;
+    }
+    disable() {
+        this._element.disabled = true;
+    }
+    setEvent(event: string, listener: any) {
+        this._element.addEventListener(event, listener);
+    }
+}
+
+
 const Out: OutputSectionController = new OutputSectionController(
     'output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>'
 );
+
+const clearBtn: ButtonControler = new ButtonControler('clear-btn', 'Erase');
 
 
 function sleep(milisecs: number): any {
@@ -63,10 +83,14 @@ function max(...args: number[]): number
 }
 
 
-function resizeHTML(pageAddSize: number = 285) {
+function resizePage(canvas: HTMLCanvasElement | any = undefined, pageAddSize: number = 300) {
+    const output: HTMLElement = document.getElementById('output');
+    const pipe: HTMLElement = document.getElementById('pipeline');
     const main: HTMLElement = document.getElementsByTagName('html')[0];
     const innerH: number = window.innerHeight;
-    main.style.height = `${max(innerH, pageAddSize + calculateNewCanvasSize())}px`;
+    main.style.height = max(innerH, pageAddSize + calculateNewCanvasSize()).toString() + "px";
+    output.style.width = pipe.style.width = calculateNewCanvasSize().toString() + "px";
+    resizeCanvas(canvas);
 }
 
 
@@ -80,18 +104,6 @@ function calculateNewCanvasSize(maxSize: number = 400, increaseSize: number = 30
 
 function calculateNewCtxSize(maxCTXSize: number = 22, maxCanvasSize: number = 400): number {
     return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
-}
-
-
-function enableButton(selector: string) {
-    const button: HTMLButtonElement = (document.getElementById(selector) as unknown) as HTMLButtonElement;
-    button.disabled = false;
-}
-
-
-function disableButton(selector: string) {
-    const button: HTMLButtonElement = (document.getElementById(selector) as unknown) as HTMLButtonElement;
-    button.disabled = true;
 }
 
 
@@ -223,11 +235,13 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
 
 async function loadDigitRecognizerModel(path: string = './data/compiled/model.json') {
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    clearBtn.print('Wait(...)');
     model = await tf.loadLayersModel(path);
     writeLog("The model was loaded successfully!");
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
-    enableButton('clear-btn');
+    clearBtn.enable();
+    clearBtn.printDefaultMessage();
     Out.printDefaultMessage();
 }
 
@@ -237,6 +251,7 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
     const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape: number[][] = [[padding, padding], [padding, padding]];
     const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+
     // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
     // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
     const InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
@@ -252,10 +267,11 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
             throw Error('Canvas has no drawing, prediction canceled!');
         }
 
-        disableButton('clear-btn');
+        clearBtn.disable();
+        clearBtn.print('Wait(<strong>...</strong>)');
+        Out.print('Analyzing The Drawing(<strong>...</strong>)');
 
         if (havePredictLastDraw === false) {
-            Out.print('Analyzing The Drawing(<strong>...</strong>)');
             if (firstPrediction === false)
                 await sleep(waitTime);
             else // Don't sleep in the first prediction
@@ -264,7 +280,8 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
             havePredictLastDraw = false;
 
         if (checkHalt() === true) {
-            enableButton('clear-btn');
+            clearBtn.enable();
+            clearBtn.printDefaultMessage();
             Out.printDefaultMessage();
             throw Error('Halt Received, prediction was canceled!');
         }
@@ -283,33 +300,25 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
     tf.engine().endScope(); //Prevents high usage of gpu
 
     writeLog(`Prediction: ${prediction} ... Certainty: ${(parseFloat(probability.toPrecision(4)) * 100)}%`, false);
-    enableButton('clear-btn');
+    clearBtn.enable();
+    clearBtn.printDefaultMessage();
     havePredictLastDraw = true;
 }
 
 
-(function (welcomeMessage: string) { resizeHTML();
+(function (welcomeMessage: string) {
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
     setCanvasEvents(canvas);
-    resizeCanvas(canvas);
-    const clearBtn: HTMLButtonElement = (document.getElementById('clear-btn') as unknown) as HTMLButtonElement;
-    const output: HTMLElement = document.getElementById('output');
-    const pipe: HTMLElement = document.getElementById('pipeline');
-    let width: string = `${calculateNewCanvasSize()}px`;
-    output.style.width = width;
-    pipe.style.width = width;
-    clearBtn.addEventListener('click', () => {
+    resizePage(canvas);
+    clearBtn.setEvent('click', () => {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
             Out.printDefaultMessage();
         haltPrediction = true;
     });
     window.addEventListener('resize', () => {
-        width = `${calculateNewCanvasSize()}px`;
-        output.style.width = width;
-        pipe.style.width = width;
-        resizeCanvas(canvas); resizeHTML();
+        resizePage(canvas);
         if (modelWasLoaded === true)
             Out.printDefaultMessage();
     });

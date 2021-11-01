@@ -1,3 +1,16 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -58,7 +71,26 @@ var OutputSectionController = (function () {
     return OutputSectionController;
 }());
 ;
+var ButtonControler = (function (_super) {
+    __extends(ButtonControler, _super);
+    function ButtonControler(id, defaultMsg) {
+        var _this = _super.call(this, id, defaultMsg) || this;
+        _this._element = _this.element;
+        return _this;
+    }
+    ButtonControler.prototype.enable = function () {
+        this._element.disabled = false;
+    };
+    ButtonControler.prototype.disable = function () {
+        this._element.disabled = true;
+    };
+    ButtonControler.prototype.setEvent = function (event, listener) {
+        this._element.addEventListener(event, listener);
+    };
+    return ButtonControler;
+}(OutputSectionController));
 var Out = new OutputSectionController('output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>');
+var clearBtn = new ButtonControler('clear-btn', 'Erase');
 function sleep(milisecs) {
     return new Promise(function (resolve) { return setTimeout(resolve, milisecs); });
 }
@@ -86,11 +118,16 @@ function max() {
         maximum = maximum < args[i] ? args[i] : maximum;
     return maximum;
 }
-function resizeHTML(pageAddSize) {
-    if (pageAddSize === void 0) { pageAddSize = 285; }
+function resizePage(canvas, pageAddSize) {
+    if (canvas === void 0) { canvas = undefined; }
+    if (pageAddSize === void 0) { pageAddSize = 300; }
+    var output = document.getElementById('output');
+    var pipe = document.getElementById('pipeline');
     var main = document.getElementsByTagName('html')[0];
     var innerH = window.innerHeight;
-    main.style.height = max(innerH, pageAddSize + calculateNewCanvasSize()) + "px";
+    main.style.height = max(innerH, pageAddSize + calculateNewCanvasSize()).toString() + "px";
+    output.style.width = pipe.style.width = calculateNewCanvasSize().toString() + "px";
+    resizeCanvas(canvas);
 }
 function calculateNewCanvasSize(maxSize, increaseSize) {
     if (maxSize === void 0) { maxSize = 400; }
@@ -104,14 +141,6 @@ function calculateNewCtxSize(maxCTXSize, maxCanvasSize) {
     if (maxCTXSize === void 0) { maxCTXSize = 22; }
     if (maxCanvasSize === void 0) { maxCanvasSize = 400; }
     return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
-}
-function enableButton(selector) {
-    var button = document.getElementById(selector);
-    button.disabled = false;
-}
-function disableButton(selector) {
-    var button = document.getElementById(selector);
-    button.disabled = true;
 }
 function resizeCanvas(canvas, maxCanvasSize, maxCTXSize) {
     if (canvas === void 0) { canvas = undefined; }
@@ -266,13 +295,15 @@ function loadDigitRecognizerModel(path) {
             switch (_a.label) {
                 case 0:
                     canvas = document.getElementById('draw-canvas');
+                    clearBtn.print('Wait(...)');
                     return [4, tf.loadLayersModel(path)];
                 case 1:
                     model = _a.sent();
                     writeLog("The model was loaded successfully!");
                     canvas.style.cursor = 'crosshair';
                     modelWasLoaded = true;
-                    enableButton('clear-btn');
+                    clearBtn.enable();
+                    clearBtn.printDefaultMessage();
                     Out.printDefaultMessage();
                     return [2];
             }
@@ -303,9 +334,10 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                         Out.print('<strong>TIP</strong>: Click and Hold to draw.');
                         throw Error('Canvas has no drawing, prediction canceled!');
                     }
-                    disableButton('clear-btn');
-                    if (!(havePredictLastDraw === false)) return [3, 5];
+                    clearBtn.disable();
+                    clearBtn.print('Wait(<strong>...</strong>)');
                     Out.print('Analyzing The Drawing(<strong>...</strong>)');
+                    if (!(havePredictLastDraw === false)) return [3, 5];
                     if (!(firstPrediction === false)) return [3, 3];
                     return [4, sleep(waitTime)];
                 case 2:
@@ -320,7 +352,8 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     _a.label = 6;
                 case 6:
                     if (checkHalt() === true) {
-                        enableButton('clear-btn');
+                        clearBtn.enable();
+                        clearBtn.printDefaultMessage();
                         Out.printDefaultMessage();
                         throw Error('Halt Received, prediction was canceled!');
                     }
@@ -337,7 +370,8 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     Out.print("The number drawn is <strong>" + prediction + "</strong> (<strong>" + getDigitName(prediction) + "</strong>)");
                     tf.engine().endScope();
                     writeLog("Prediction: " + prediction + " ... Certainty: " + (parseFloat(probability.toPrecision(4)) * 100) + "%", false);
-                    enableButton('clear-btn');
+                    clearBtn.enable();
+                    clearBtn.printDefaultMessage();
                     havePredictLastDraw = true;
                     return [2];
             }
@@ -345,29 +379,18 @@ function predictImage(canvas, inputSize, padding, waitTime) {
     });
 }
 (function (welcomeMessage) {
-    resizeHTML();
     var canvas = document.getElementById('draw-canvas');
     var ctx = canvas.getContext('2d');
     setCanvasEvents(canvas);
-    resizeCanvas(canvas);
-    var clearBtn = document.getElementById('clear-btn');
-    var output = document.getElementById('output');
-    var pipe = document.getElementById('pipeline');
-    var width = calculateNewCanvasSize() + "px";
-    output.style.width = width;
-    pipe.style.width = width;
-    clearBtn.addEventListener('click', function () {
+    resizePage(canvas);
+    clearBtn.setEvent('click', function () {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
             Out.printDefaultMessage();
         haltPrediction = true;
     });
     window.addEventListener('resize', function () {
-        width = calculateNewCanvasSize() + "px";
-        output.style.width = width;
-        pipe.style.width = width;
-        resizeCanvas(canvas);
-        resizeHTML();
+        resizePage(canvas);
         if (modelWasLoaded === true)
             Out.printDefaultMessage();
     });
