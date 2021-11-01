@@ -1,4 +1,4 @@
-const SHOW_LOGS = true;
+const SHOW_LOGS: boolean = false;
 interface PositionalInteface {
     x: number;
     y: number;
@@ -137,11 +137,12 @@ function getDigitName(number: number): string {
 }
 
 
-function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1200): void {
+function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350): void {
     const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     const ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
 
     _canvas.addEventListener('mousedown', (e) => {
+        e.preventDefault()
         if (modelWasLoaded === false)
             return ;
         drawing = true;
@@ -150,7 +151,8 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         lastPos = { x: e.offsetX, y: e.offsetY };
     });
 
-    _canvas.addEventListener('mouseout', async () => {
+    _canvas.addEventListener('mouseout', async (e) => {
+        e.preventDefault()
         const wasDrawing: boolean = drawing;
         drawing = false;
         await sleep(sleepTimeOnMouseOut);
@@ -159,6 +161,7 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
     });
 
     _canvas.addEventListener('mousemove', (e) => {
+        e.preventDefault()
         if (drawing === false)
             return ;
         ctx.beginPath();
@@ -168,7 +171,8 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         lastPos = { x: e.offsetX, y: e.offsetY };
     });
 
-    _canvas.addEventListener('mouseup', async () => {
+    _canvas.addEventListener('mouseup', async (e) => {
+        e.preventDefault()
         const wasDrawing: boolean = drawing;
         drawing = false;
         await sleep(sleepTimeOnMouseUp);
@@ -185,9 +189,10 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         haltPrediction = false;
         const clientRect: DOMRect = _canvas.getBoundingClientRect();
         const touch: Touch = e.touches[0];
-        let x: number = touch.pageX - clientRect.x;
-        let y: number = touch.pageY - clientRect.y;
-        lastPos = { x, y };
+        lastPos = {
+            x: touch.pageX - clientRect.x,
+            y: touch.pageY - clientRect.y
+        };
     });
 
     _canvas.addEventListener('touchmove', (e) => {
@@ -205,7 +210,8 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         lastPos = { x, y };
     });
 
-    _canvas.addEventListener('touchend', async () => {
+    _canvas.addEventListener('touchend', async (e) => {
+        e.preventDefault()
         const wasDrawing: boolean = drawing;
         drawing = false;
         await sleep(sleepTimeOnMouseUp);
@@ -226,7 +232,7 @@ async function loadDigitRecognizerModel(path: string = './data/compiled/model.js
 }
 
 
-async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 4, waitTime: number = 200)
+async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 4, waitTime: number = 150)
 {
     const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape: number[][] = [[padding, padding], [padding, padding]];
@@ -282,9 +288,6 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
 }
 
 
-/***
- * @info main function
- ***/
 (function (welcomeMessage: string) { resizeHTML();
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     const ctx: CanvasRenderingContext2D = canvas.getContext('2d');

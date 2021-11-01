@@ -34,7 +34,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var SHOW_LOGS = true;
+var SHOW_LOGS = false;
 ;
 var modelWasLoaded = false;
 var drawing = false;
@@ -156,10 +156,11 @@ function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
     var _this = this;
     if (canvas === void 0) { canvas = undefined; }
     if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
-    if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1200; }
+    if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
     var _canvas = canvas || document.getElementById('draw-canvas');
     var ctx = _canvas.getContext('2d');
     _canvas.addEventListener('mousedown', function (e) {
+        e.preventDefault();
         if (modelWasLoaded === false)
             return;
         drawing = true;
@@ -167,11 +168,12 @@ function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
         havePredictLastDraw = false;
         lastPos = { x: e.offsetX, y: e.offsetY };
     });
-    _canvas.addEventListener('mouseout', function () { return __awaiter(_this, void 0, void 0, function () {
+    _canvas.addEventListener('mouseout', function (e) { return __awaiter(_this, void 0, void 0, function () {
         var wasDrawing;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    e.preventDefault();
                     wasDrawing = drawing;
                     drawing = false;
                     return [4, sleep(sleepTimeOnMouseOut)];
@@ -184,6 +186,7 @@ function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
         });
     }); });
     _canvas.addEventListener('mousemove', function (e) {
+        e.preventDefault();
         if (drawing === false)
             return;
         ctx.beginPath();
@@ -192,11 +195,12 @@ function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
         ctx.stroke();
         lastPos = { x: e.offsetX, y: e.offsetY };
     });
-    _canvas.addEventListener('mouseup', function () { return __awaiter(_this, void 0, void 0, function () {
+    _canvas.addEventListener('mouseup', function (e) { return __awaiter(_this, void 0, void 0, function () {
         var wasDrawing;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    e.preventDefault();
                     wasDrawing = drawing;
                     drawing = false;
                     return [4, sleep(sleepTimeOnMouseUp)];
@@ -217,9 +221,10 @@ function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
         haltPrediction = false;
         var clientRect = _canvas.getBoundingClientRect();
         var touch = e.touches[0];
-        var x = touch.pageX - clientRect.x;
-        var y = touch.pageY - clientRect.y;
-        lastPos = { x: x, y: y };
+        lastPos = {
+            x: touch.pageX - clientRect.x,
+            y: touch.pageY - clientRect.y
+        };
     });
     _canvas.addEventListener('touchmove', function (e) {
         e.preventDefault();
@@ -235,11 +240,12 @@ function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
         ctx.stroke();
         lastPos = { x: x, y: y };
     });
-    _canvas.addEventListener('touchend', function () { return __awaiter(_this, void 0, void 0, function () {
+    _canvas.addEventListener('touchend', function (e) { return __awaiter(_this, void 0, void 0, function () {
         var wasDrawing;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    e.preventDefault();
                     wasDrawing = drawing;
                     drawing = false;
                     return [4, sleep(sleepTimeOnMouseUp)];
@@ -277,7 +283,7 @@ function predictImage(canvas, inputSize, padding, waitTime) {
     if (canvas === void 0) { canvas = undefined; }
     if (inputSize === void 0) { inputSize = 36; }
     if (padding === void 0) { padding = 4; }
-    if (waitTime === void 0) { waitTime = 200; }
+    if (waitTime === void 0) { waitTime = 150; }
     return __awaiter(this, void 0, void 0, function () {
         var inputShape, paddingShape, _canvas, InPut, error_1, output, prediction, probability;
         return __generator(this, function (_a) {
