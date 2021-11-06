@@ -1,4 +1,4 @@
-const SHOW_LOGS: boolean = false;
+const SHOW_LOGS: boolean = true;
 interface PositionalInteface {
     x: number;
     y: number;
@@ -30,20 +30,24 @@ class OutputSectionController {
 };
 
 
-class ButtonControler extends OutputSectionController {
-    protected readonly _element: HTMLButtonElement;
-    constructor(id: string, defaultMsg: string) {
+class ButtonController extends OutputSectionController {
+    protected readonly _btn_element: HTMLButtonElement;
+    protected readonly _disabledMsg: string;
+    constructor(id: string, defaultMsg: string, disabledMsg: string) {
         super(id, defaultMsg);
-        this._element = (this.element as unknown) as HTMLButtonElement;
+        this._btn_element = (this.element as unknown) as HTMLButtonElement;
+        this._disabledMsg = disabledMsg;
     }
     enable() {
-        this._element.disabled = false;
+        this._btn_element.disabled = false;
+        this.printDefaultMessage();
     }
     disable() {
-        this._element.disabled = true;
+        this._btn_element.disabled = true;
+        this.print(this._disabledMsg);
     }
     setEvent(event: string, listener: any) {
-        this._element.addEventListener(event, listener);
+        this._btn_element.addEventListener(event, listener);
     }
 }
 
@@ -52,7 +56,7 @@ const Out: OutputSectionController = new OutputSectionController(
     'output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>'
 );
 
-const clearBtn: ButtonControler = new ButtonControler('clear-btn', 'Erase');
+const clearBtn: ButtonController = new ButtonController('clear-btn', 'Erase', 'Wait(<strong>...</strong>)');
 
 
 function sleep(milisecs: number): any {
@@ -134,7 +138,7 @@ function writeLog(message: string, showTime: boolean = true): boolean {
     const standardrize = (time: number): string | number => {
         return time < 10 ? '0'+time : time;
     }
-    const hour = standardrize(date.getUTCHours() - 1);
+    const hour = standardrize(date.getUTCHours() !== 0 ? date.getUTCHours() - 1 : 23);
     const minutes = standardrize(date.getUTCMinutes());
     const seconds = standardrize(date.getUTCSeconds());
     console.log(showTime ? `${hour}:${minutes}:${seconds} - ` + message : message);
@@ -241,16 +245,17 @@ async function loadDigitRecognizerModel(path: string = './data/compiled/model.js
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
     clearBtn.enable();
-    clearBtn.printDefaultMessage();
     Out.printDefaultMessage();
 }
 
 
-async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 4, waitTime: number = 150)
-{
+async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 4, waitTime: number = 150) {
     const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape: number[][] = [[padding, padding], [padding, padding]];
     const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+
+    clearBtn.disable();
+    Out.print('Analyzing The Drawing(<strong>...</strong>)');
 
     // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
     // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
@@ -263,13 +268,10 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
         else if (InPut.sum().dataSync()[0] === 0) {
             // The condition above checks if the sum of all pixels on the canvas is equal to zero,
             // if true that means that nothing is drawn on the canvas.
+            clearBtn.enable();
             Out.print('<strong>TIP</strong>: Click and Hold to draw.');
             throw Error('Canvas has no drawing, prediction canceled!');
         }
-
-        clearBtn.disable();
-        clearBtn.print('Wait(<strong>...</strong>)');
-        Out.print('Analyzing The Drawing(<strong>...</strong>)');
 
         if (havePredictLastDraw === false) {
             if (firstPrediction === false)
@@ -281,7 +283,6 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
 
         if (checkHalt() === true) {
             clearBtn.enable();
-            clearBtn.printDefaultMessage();
             Out.printDefaultMessage();
             throw Error('Halt Received, prediction was canceled!');
         }
@@ -301,7 +302,6 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
 
     writeLog(`Prediction: ${prediction} ... Certainty: ${(parseFloat(probability.toPrecision(4)) * 100)}%`, false);
     clearBtn.enable();
-    clearBtn.printDefaultMessage();
     havePredictLastDraw = true;
 }
 

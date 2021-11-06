@@ -47,7 +47,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var SHOW_LOGS = false;
+var SHOW_LOGS = true;
 ;
 var modelWasLoaded = false;
 var drawing = false;
@@ -71,26 +71,29 @@ var OutputSectionController = (function () {
     return OutputSectionController;
 }());
 ;
-var ButtonControler = (function (_super) {
-    __extends(ButtonControler, _super);
-    function ButtonControler(id, defaultMsg) {
+var ButtonController = (function (_super) {
+    __extends(ButtonController, _super);
+    function ButtonController(id, defaultMsg, disabledMsg) {
         var _this = _super.call(this, id, defaultMsg) || this;
-        _this._element = _this.element;
+        _this._btn_element = _this.element;
+        _this._disabledMsg = disabledMsg;
         return _this;
     }
-    ButtonControler.prototype.enable = function () {
-        this._element.disabled = false;
+    ButtonController.prototype.enable = function () {
+        this._btn_element.disabled = false;
+        this.printDefaultMessage();
     };
-    ButtonControler.prototype.disable = function () {
-        this._element.disabled = true;
+    ButtonController.prototype.disable = function () {
+        this._btn_element.disabled = true;
+        this.print(this._disabledMsg);
     };
-    ButtonControler.prototype.setEvent = function (event, listener) {
-        this._element.addEventListener(event, listener);
+    ButtonController.prototype.setEvent = function (event, listener) {
+        this._btn_element.addEventListener(event, listener);
     };
-    return ButtonControler;
+    return ButtonController;
 }(OutputSectionController));
 var Out = new OutputSectionController('output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>');
-var clearBtn = new ButtonControler('clear-btn', 'Erase');
+var clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait(<strong>...</strong>)');
 function sleep(milisecs) {
     return new Promise(function (resolve) { return setTimeout(resolve, milisecs); });
 }
@@ -170,7 +173,7 @@ function writeLog(message, showTime) {
     var standardrize = function (time) {
         return time < 10 ? '0' + time : time;
     };
-    var hour = standardrize(date.getUTCHours() - 1);
+    var hour = standardrize(date.getUTCHours() !== 0 ? date.getUTCHours() - 1 : 23);
     var minutes = standardrize(date.getUTCMinutes());
     var seconds = standardrize(date.getUTCSeconds());
     console.log(showTime ? hour + ":" + minutes + ":" + seconds + " - " + message : message);
@@ -303,7 +306,6 @@ function loadDigitRecognizerModel(path) {
                     canvas.style.cursor = 'crosshair';
                     modelWasLoaded = true;
                     clearBtn.enable();
-                    clearBtn.printDefaultMessage();
                     Out.printDefaultMessage();
                     return [2];
             }
@@ -323,6 +325,8 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     inputShape = [inputSize - 2 * padding, inputSize - 2 * padding];
                     paddingShape = [[padding, padding], [padding, padding]];
                     _canvas = canvas || document.getElementById('draw-canvas');
+                    clearBtn.disable();
+                    Out.print('Analyzing The Drawing(<strong>...</strong>)');
                     InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
                         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
                     _a.label = 1;
@@ -331,12 +335,10 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     if (modelWasLoaded === false || drawing === true)
                         throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
                     else if (InPut.sum().dataSync()[0] === 0) {
+                        clearBtn.enable();
                         Out.print('<strong>TIP</strong>: Click and Hold to draw.');
                         throw Error('Canvas has no drawing, prediction canceled!');
                     }
-                    clearBtn.disable();
-                    clearBtn.print('Wait(<strong>...</strong>)');
-                    Out.print('Analyzing The Drawing(<strong>...</strong>)');
                     if (!(havePredictLastDraw === false)) return [3, 5];
                     if (!(firstPrediction === false)) return [3, 3];
                     return [4, sleep(waitTime)];
@@ -353,7 +355,6 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                 case 6:
                     if (checkHalt() === true) {
                         clearBtn.enable();
-                        clearBtn.printDefaultMessage();
                         Out.printDefaultMessage();
                         throw Error('Halt Received, prediction was canceled!');
                     }
@@ -371,7 +372,6 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     tf.engine().endScope();
                     writeLog("Prediction: " + prediction + " ... Certainty: " + (parseFloat(probability.toPrecision(4)) * 100) + "%", false);
                     clearBtn.enable();
-                    clearBtn.printDefaultMessage();
                     havePredictLastDraw = true;
                     return [2];
             }
