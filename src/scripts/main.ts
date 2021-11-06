@@ -1,4 +1,4 @@
-const SHOW_LOGS: boolean = true;
+const SHOW_LOGS: boolean = false;
 interface PositionalInteface {
     x: number;
     y: number;
