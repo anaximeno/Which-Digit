@@ -1,18 +1,28 @@
-const SHOW_LOGS: boolean = false;
-interface PositionalInteface {
-    x: number;
-    y: number;
+interface BiDimensionalPositionInteface {
+    x: number; y: number;
 };
-let modelWasLoaded: boolean = false;
-let drawing: boolean = false;
-let haltPrediction: boolean = false;
-let havePredictLastDraw: boolean = false;
-let lastPos: PositionalInteface = {x: 0, y: 0};
+
+let lastCTXPos: BiDimensionalPositionInteface;
+let modelWasLoaded: boolean;
+let drawing: boolean;
+let haltPrediction: boolean;
+let havePredictLastDraw: boolean;
+let firstPrediction: boolean;
 let model: any;
-let firstPrediction: boolean = true;
+
+lastCTXPos = {x: 0, y: 0};
+modelWasLoaded = false;
+drawing = false;
+haltPrediction = false;
+havePredictLastDraw = false;
+firstPrediction = true;
 
 
-class OutputSectionController {
+const SHOW_DEBUG_LOGS = false;
+
+
+
+class SectionController {
     private readonly selector: string;
     protected readonly defaultMessage: string;
     protected readonly element: HTMLElement;
@@ -27,10 +37,15 @@ class OutputSectionController {
     printDefaultMessage() {
         this.print(this.defaultMessage);
     }
+    static setOpacity (id: string, value: number, title: string) {
+        const element: HTMLElement = (document.getElementById(id) as unknown) as HTMLElement;
+        element.style.opacity = value.toString();
+        element.title = title;
+    }
 };
 
 
-class ButtonController extends OutputSectionController {
+class ButtonController extends SectionController {
     protected readonly _btn_element: HTMLButtonElement;
     protected readonly _disabledMsg: string;
     constructor(id: string, defaultMsg: string, disabledMsg: string) {
@@ -52,14 +67,14 @@ class ButtonController extends OutputSectionController {
 }
 
 
-const Out: OutputSectionController = new OutputSectionController(
-    'output', 'Draw any digit between <strong>0</strong> to <strong>9</strong>'
+const outSection = new SectionController(
+    'output', "<div id='output-text'>Draw any digit between <strong>0</strong> to <strong>9</strong><\div>"
 );
 
-const clearBtn: ButtonController = new ButtonController('clear-btn', 'Erase', 'Wait(<strong>...</strong>)');
+const clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait(<strong>...</strong>)');
 
 
-function sleep(milisecs: number): any {
+function sleep(milisecs: number): Promise<unknown> {
     // Stops the execution by 'milisecs' miliseconds.
     return new Promise(resolve => setTimeout(resolve, milisecs));
 }
@@ -132,17 +147,40 @@ function checkHalt(): boolean {
 }
 
 
-function writeLog(message: string, showTime: boolean = true): boolean {
-    if (!SHOW_LOGS) return false;
-    const date = new Date();
-    const standardrize = (time: number): string | number => {
-        return time < 10 ? '0'+time : time;
+function checkFirstPrediction(): boolean {
+    if (firstPrediction === true) {
+        firstPrediction = false;
+        return true;
     }
-    const hour = standardrize(date.getUTCHours() !== 0 ? date.getUTCHours() - 1 : 23);
-    const minutes = standardrize(date.getUTCMinutes());
-    const seconds = standardrize(date.getUTCSeconds());
+    return false;
+}
+
+
+function checkLastDrawPredicted(): boolean {
+    if (havePredictLastDraw === true) {
+        havePredictLastDraw = false;
+        return true;
+    }
+    return false;
+}
+
+
+function writeLog(message: string, showTime: boolean = true, timeDiff: number = -1): boolean {
+    function addZero(time: number): string {
+        return time < 10 ? '0' + time.toString() : time.toString();
+    }
+
+    if (!SHOW_DEBUG_LOGS)
+        return SHOW_DEBUG_LOGS;
+
+    const date = new Date();
+    const UTCHours = date.getUTCHours();
+    const hour = addZero(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff :  24 + timeDiff);
+    const minutes = addZero(date.getUTCMinutes());
+    const seconds = addZero(date.getUTCSeconds());
+
     console.log(showTime ? `${hour}:${minutes}:${seconds} - ` + message : message);
-    return true;
+    return SHOW_DEBUG_LOGS;
 }
 
 
@@ -164,7 +202,7 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         drawing = true;
         haltPrediction = false;
         havePredictLastDraw = false;
-        lastPos = { x: e.offsetX, y: e.offsetY };
+        lastCTXPos = { x: e.offsetX, y: e.offsetY };
     });
 
     _canvas.addEventListener('mouseout', async (e) => {
@@ -181,10 +219,10 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         if (drawing === false)
             return ;
         ctx.beginPath();
-        ctx.moveTo(lastPos.x, lastPos.y);
+        ctx.moveTo(lastCTXPos.x, lastCTXPos.y);
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.stroke();
-        lastPos = { x: e.offsetX, y: e.offsetY };
+        lastCTXPos = { x: e.offsetX, y: e.offsetY };
     });
 
     _canvas.addEventListener('mouseup', async (e) => {
@@ -205,7 +243,7 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         haltPrediction = false;
         const clientRect: DOMRect = _canvas.getBoundingClientRect();
         const touch: Touch = e.touches[0];
-        lastPos = {
+        lastCTXPos = {
             x: touch.pageX - clientRect.x,
             y: touch.pageY - clientRect.y
         };
@@ -220,10 +258,10 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
         let x: number = touch.pageX - clientRect.x;
         let y: number = touch.pageY - clientRect.y;
         ctx.beginPath();
-        ctx.moveTo(lastPos.x, lastPos.y);
+        ctx.moveTo(lastCTXPos.x, lastCTXPos.y);
         ctx.lineTo(x, y);
         ctx.stroke();
-        lastPos = { x, y };
+        lastCTXPos = { x, y };
     });
 
     _canvas.addEventListener('touchend', async (e) => {
@@ -237,7 +275,7 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
 }
 
 
-async function loadDigitRecognizerModel(path: string = './data/compiled/model.json') {
+async function loadDigitRecognizerModel(path: string) {
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     clearBtn.print('Wait(...)');
     model = await tf.loadLayersModel(path);
@@ -245,20 +283,19 @@ async function loadDigitRecognizerModel(path: string = './data/compiled/model.js
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
     clearBtn.enable();
-    Out.printDefaultMessage();
+    outSection.printDefaultMessage();
 }
 
 
 async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 4, waitTime: number = 150) {
-    const inputShape: number[] = [inputSize - 2*padding, inputSize - 2*padding];
-    const paddingShape: number[][] = [[padding, padding], [padding, padding]];
-    const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
+    const paddingShape = [[padding, padding], [padding, padding]];
+    const _canvas = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
 
     clearBtn.disable();
-    Out.print('Analyzing The Drawing(<strong>...</strong>)');
+    outSection.print("<div id='output-text'>Analyzing The Drawing(<strong>...</strong>)<\div>");
 
-    // Get the canvas image from pixels and apply some transformations to make it a good input to the model.
-    // To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms.
+    /* To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms. */
     const InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
 
@@ -266,24 +303,17 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
         if (modelWasLoaded === false || drawing === true)
             throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
         else if (InPut.sum().dataSync()[0] === 0) {
-            // The condition above checks if the sum of all pixels on the canvas is equal to zero,
-            // if true that means that nothing is drawn on the canvas.
             clearBtn.enable();
-            Out.print('<strong>TIP</strong>: Click and Hold to draw.');
+            outSection.print("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
             throw Error('Canvas has no drawing, prediction canceled!');
         }
 
-        if (havePredictLastDraw === false) {
-            if (firstPrediction === false)
-                await sleep(waitTime);
-            else // Don't sleep in the first prediction
-                firstPrediction = false;
-        } else
-            havePredictLastDraw = false;
+        if (checkLastDrawPredicted() === false)
+            await (checkFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime));
 
         if (checkHalt() === true) {
             clearBtn.enable();
-            Out.printDefaultMessage();
+            outSection.printDefaultMessage();
             throw Error('Halt Received, prediction was canceled!');
         }
     } catch (error) {
@@ -295,34 +325,39 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
     const output: number = model.predict(InPut).dataSync();
     const prediction: number = tf.argMax(output).dataSync();
     const probability: number = tf.max(output).dataSync()[0];
-    Out.print(
-        `The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)`
-    );
     tf.engine().endScope(); //Prevents high usage of gpu
-
-    writeLog(`Prediction: ${prediction} ... Certainty: ${(parseFloat(probability.toPrecision(4)) * 100)}%`, false);
+    outSection.print(
+        `<div id='output-text'>The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)<\div>`
+    );
+    
+    SectionController.setOpacity(
+        'output-text', probability, 'The opacity of the text represents the certainty of the prediction.'
+    );
+    
+    writeLog(`Prediction: ${prediction} ... Certainty: ${(probability * 100).toFixed(2)}%`, false);
     clearBtn.enable();
     havePredictLastDraw = true;
 }
 
 
 (function (welcomeMessage: string) {
-    const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
-    setCanvasEvents(canvas);
-    resizePage(canvas);
+    const canvas = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    setCanvasEvents(canvas); resizePage(canvas);
+    const ctx = canvas.getContext('2d');
     clearBtn.setEvent('click', () => {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
-            Out.printDefaultMessage();
+            outSection.printDefaultMessage();
+        SectionController.setOpacity('output-text', 1, '');
         haltPrediction = true;
     });
     window.addEventListener('resize', () => {
         resizePage(canvas);
         if (modelWasLoaded === true)
-            Out.printDefaultMessage();
+            outSection.printDefaultMessage();
+        SectionController.setOpacity('output-text', 1, '');
     });
-    loadDigitRecognizerModel();
-    console.log(`Logs ${SHOW_LOGS ? 'enabled' : 'disabled'}.`);
+    loadDigitRecognizerModel('./data/compiled/model.json');
+    console.log(`Logs ${SHOW_DEBUG_LOGS ? 'enabled' : 'disabled'}.`);
     writeLog(welcomeMessage);
-})('Welcome to the Digit Recognition Web App!');
+}) ('Welcome to the Digit Recognition Web App!');
