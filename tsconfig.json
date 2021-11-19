@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
-		"outFile": "./src/scripts/compiled/main.js",
-		"lib": ["es2016", "dom"],
+		"outFile": "./src/scripts/static/main.js",
+		"lib": ["es6", "dom"],
 		"removeComments": true,
 		"sourceMap": true
 	},

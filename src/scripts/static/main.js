@@ -341,7 +341,7 @@ function loadDigitRecognizerModel(path) {
 function predictImage(canvas, inputSize, padding, waitTime) {
     if (canvas === void 0) { canvas = undefined; }
     if (inputSize === void 0) { inputSize = 36; }
-    if (padding === void 0) { padding = 4; }
+    if (padding === void 0) { padding = 2; }
     if (waitTime === void 0) { waitTime = 150; }
     return __awaiter(this, void 0, void 0, function () {
         var inputShape, paddingShape, _canvas, InPut, error_1, output, prediction, probability;
