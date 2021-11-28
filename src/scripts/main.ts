@@ -72,7 +72,7 @@ const outSection = new SectionController(
     'output', "<div id='output-text'>Draw any digit between <strong>0</strong> to <strong>9</strong><\div>"
 );
 
-const clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait(<strong>...</strong>)');
+const clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait');
 
 
 function sleep(milisecs: number): Promise<unknown> {
@@ -148,7 +148,7 @@ function checkHalt(): boolean {
 }
 
 
-function checkFirstPrediction(): boolean {
+function isFirstPrediction(): boolean {
     if (firstPrediction === true) {
         firstPrediction = false;
         return true;
@@ -167,18 +167,16 @@ function checkLastDrawPredicted(): boolean {
 
 
 function writeLog(message: string, showTime: boolean = true, timeDiff: number = -1): boolean {
-    function addZero(time: number): string {
-        return time < 10 ? '0' + time.toString() : time.toString();
-    }
+    const zeroPad = (num: number): string =>  num < 10 ? '0'+num.toString() : num.toString();
 
     if (!SHOW_DEBUG_LOGS)
         return SHOW_DEBUG_LOGS;
 
     const date = new Date();
     const UTCHours = date.getUTCHours();
-    const hour = addZero(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff :  24 + timeDiff);
-    const minutes = addZero(date.getUTCMinutes());
-    const seconds = addZero(date.getUTCSeconds());
+    const hour = zeroPad(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff :  24 + timeDiff);
+    const minutes = zeroPad(date.getUTCMinutes());
+    const seconds = zeroPad(date.getUTCSeconds());
 
     console.log(showTime ? `${hour}:${minutes}:${seconds} - ` + message : message);
     return SHOW_DEBUG_LOGS;
@@ -278,7 +276,7 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
 
 async function loadDigitRecognizerModel(path: string) {
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    clearBtn.print('Wait(...)');
+    clearBtn.print('Wait');
     model = await tf.loadLayersModel(path);
     writeLog("The model was loaded successfully!");
     canvas.style.cursor = 'crosshair';
@@ -288,13 +286,16 @@ async function loadDigitRecognizerModel(path: string) {
 }
 
 
-async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 2, waitTime: number = 150) {
+async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 6, waitTime: number = 150) {
     const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape = [[padding, padding], [padding, padding]];
     const _canvas = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
+    const threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
+        '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
+    '</svg>'); // TODO: I've definetelly to rewrite this in react!
 
     clearBtn.disable();
-    outSection.print("<div id='output-text'>Analyzing The Drawing(<strong>...</strong>)<\div>");
+    outSection.print(threeDotsSVG);
 
     /* To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms. */
     const InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
@@ -310,7 +311,7 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
         }
 
         if (checkLastDrawPredicted() === false)
-            await (checkFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime));
+            await (isFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime));
 
         if (checkHalt() === true) {
             clearBtn.enable();
@@ -323,19 +324,20 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
     }
 
     tf.engine().startScope(); //Prevents high usage of gpu
-    const output: number = model.predict(InPut).dataSync();
+    const output = model.predict(InPut).dataSync();
     const prediction: number = tf.argMax(output).dataSync();
-    const probability: number = tf.max(output).dataSync()[0];
+    const prob: number = tf.max(output).dataSync()[0];
+    const percentProb = Number((prob * 100).toFixed(2));
     tf.engine().endScope(); //Prevents high usage of gpu
     outSection.print(
         `<div id='output-text'>The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)<\div>`
     );
     
-    SectionController.setOpacity(
-        'output-text', probability, 'The opacity of the text represents the certainty of the prediction.'
-    );
+    SectionController.setOpacity( // TODO: eliminate the opacity feature
+        'output-text', 1, `${percentProb}% certain.`
+    ); 
     
-    writeLog(`Prediction: ${prediction} ... Certainty: ${(probability * 100).toFixed(2)}%`, false);
+    writeLog(`Prediction: ${prediction} ... Certainty: ${percentProb}%`, false);
     clearBtn.enable();
     havePredictLastDraw = true;
 }

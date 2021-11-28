@@ -104,7 +104,7 @@ var ButtonController = (function (_super) {
     return ButtonController;
 }(SectionController));
 var outSection = new SectionController('output', "<div id='output-text'>Draw any digit between <strong>0</strong> to <strong>9</strong><\div>");
-var clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait(<strong>...</strong>)');
+var clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait');
 function sleep(milisecs) {
     return new Promise(function (resolve) { return setTimeout(resolve, milisecs); });
 }
@@ -176,7 +176,7 @@ function checkHalt() {
     }
     return false;
 }
-function checkFirstPrediction() {
+function isFirstPrediction() {
     if (firstPrediction === true) {
         firstPrediction = false;
         return true;
@@ -193,16 +193,14 @@ function checkLastDrawPredicted() {
 function writeLog(message, showTime, timeDiff) {
     if (showTime === void 0) { showTime = true; }
     if (timeDiff === void 0) { timeDiff = -1; }
-    function addZero(time) {
-        return time < 10 ? '0' + time.toString() : time.toString();
-    }
+    var zeroPad = function (num) { return num < 10 ? '0' + num.toString() : num.toString(); };
     if (!SHOW_DEBUG_LOGS)
         return SHOW_DEBUG_LOGS;
     var date = new Date();
     var UTCHours = date.getUTCHours();
-    var hour = addZero(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff : 24 + timeDiff);
-    var minutes = addZero(date.getUTCMinutes());
-    var seconds = addZero(date.getUTCSeconds());
+    var hour = zeroPad(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff : 24 + timeDiff);
+    var minutes = zeroPad(date.getUTCMinutes());
+    var seconds = zeroPad(date.getUTCSeconds());
     console.log(showTime ? hour + ":" + minutes + ":" + seconds + " - " + message : message);
     return SHOW_DEBUG_LOGS;
 }
@@ -324,7 +322,7 @@ function loadDigitRecognizerModel(path) {
             switch (_a.label) {
                 case 0:
                     canvas = document.getElementById('draw-canvas');
-                    clearBtn.print('Wait(...)');
+                    clearBtn.print('Wait');
                     return [4, tf.loadLayersModel(path)];
                 case 1:
                     model = _a.sent();
@@ -341,18 +339,21 @@ function loadDigitRecognizerModel(path) {
 function predictImage(canvas, inputSize, padding, waitTime) {
     if (canvas === void 0) { canvas = undefined; }
     if (inputSize === void 0) { inputSize = 36; }
-    if (padding === void 0) { padding = 2; }
+    if (padding === void 0) { padding = 6; }
     if (waitTime === void 0) { waitTime = 150; }
     return __awaiter(this, void 0, void 0, function () {
-        var inputShape, paddingShape, _canvas, InPut, error_1, output, prediction, probability;
+        var inputShape, paddingShape, _canvas, threeDotsSVG, InPut, error_1, output, prediction, prob, percentProb;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     inputShape = [inputSize - 2 * padding, inputSize - 2 * padding];
                     paddingShape = [[padding, padding], [padding, padding]];
                     _canvas = canvas || document.getElementById('draw-canvas');
+                    threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
+                        '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
+                        '</svg>');
                     clearBtn.disable();
-                    outSection.print("<div id='output-text'>Analyzing The Drawing(<strong>...</strong>)<\div>");
+                    outSection.print(threeDotsSVG);
                     InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
                         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
                     _a.label = 1;
@@ -366,7 +367,7 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                         throw Error('Canvas has no drawing, prediction canceled!');
                     }
                     if (!(checkLastDrawPredicted() === false)) return [3, 3];
-                    return [4, (checkFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime))];
+                    return [4, (isFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime))];
                 case 2:
                     _a.sent();
                     _a.label = 3;
@@ -385,11 +386,12 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     tf.engine().startScope();
                     output = model.predict(InPut).dataSync();
                     prediction = tf.argMax(output).dataSync();
-                    probability = tf.max(output).dataSync()[0];
+                    prob = tf.max(output).dataSync()[0];
+                    percentProb = Number((prob * 100).toFixed(2));
                     tf.engine().endScope();
                     outSection.print("<div id='output-text'>The number drawn is <strong>" + prediction + "</strong> (<strong>" + getDigitName(prediction) + "</strong>)<div>");
-                    SectionController.setOpacity('output-text', probability, 'The opacity of the text represents the certainty of the prediction.');
-                    writeLog("Prediction: " + prediction + " ... Certainty: " + (probability * 100).toFixed(2) + "%", false);
+                    SectionController.setOpacity('output-text', 1, percentProb + "% certain.");
+                    writeLog("Prediction: " + prediction + " ... Certainty: " + percentProb + "%", false);
                     clearBtn.enable();
                     havePredictLastDraw = true;
                     return [2];
