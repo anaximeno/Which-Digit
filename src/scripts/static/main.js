@@ -339,7 +339,7 @@ function loadDigitRecognizerModel(path) {
 function predictImage(canvas, inputSize, padding, waitTime) {
     if (canvas === void 0) { canvas = undefined; }
     if (inputSize === void 0) { inputSize = 36; }
-    if (padding === void 0) { padding = 6; }
+    if (padding === void 0) { padding = 5; }
     if (waitTime === void 0) { waitTime = 150; }
     return __awaiter(this, void 0, void 0, function () {
         var inputShape, paddingShape, _canvas, threeDotsSVG, InPut, error_1, output, prediction, prob, percentProb;
