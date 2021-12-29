@@ -2,7 +2,7 @@
 
 This Web Application can recognize which numbers were drawn by you. To do this it uses Machine Learning (actually Deep Learning) techniques for predicting (determining) which digits were drawn by you on the canvas. It was trained (we refer to training as the way our model learn to predict correctly the given inputs) using two python frameworks for Machine Learning **Tensorflow**, **Keras** and another JavaScript framework used for inference (something like using a pre-trained model to make predictions) the **TensorflowJS**. For testing the web application just click the link below:
 
-[**Digit Recognition Web App**](https://anaximeno.github.io/DigitRecognitionWebApp/ "Digit Recognition Web App")
+[**Digit Recognition Web App**](https://anaximeno.github.io/Which-Digit/ "Digit Recognition Web App")
 
 For more information about the model used for inference, click on the [Model Card](https://github.com/anaximeno/DigitRecognitionWebApp/blob/main/MODEL_CARD.md "Watch Model Card").
 
