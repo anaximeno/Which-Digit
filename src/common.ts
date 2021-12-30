@@ -105,7 +105,9 @@ interface SingleLogI {
 export class Logger {
     private log: SingleLogI[] = [];
 
-    constructor(public debugMode: boolean) { }
+    constructor(public debugMode: boolean) { 
+        this.writeLog(`Logs ${this.debugMode ? 'enabled' : 'disabled'}.`, false, true);
+    }
     
     static getTime = (): string => {
         const zeroPad = (n: number): string =>  

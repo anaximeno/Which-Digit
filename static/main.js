@@ -38,18 +38,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 export const __esModule = true;
 import { Logger, OutputLabel, Button, sleep, max } from "./common.js";
 import { Canvas } from "./canvas.js";
+import { Model } from "./model.js";
 var logger = new Logger(true);
-var modelWasLoaded = false;
-var haltPrediction = false;
-var havePredictLastDraw = true;
-var firstPrediction = true;
-var model;
-var outputLabelDefaultMsg = "<div id='output-text'>Draw any digit between <strong>"
-    + "0</strong> to <strong>9</strong><\div>";
-var outputLabel = new OutputLabel('output', outputLabelDefaultMsg);
+var outputLabel = new OutputLabel('output', "<div id='output-text'>Draw any digit between <strong>" +
+    "0</strong> to <strong>9</strong><\div>");
 var eraseButton = new Button('erase-btn', 'Erase', 'Wait');
-var SHOW_DEBUG_LOGS = false;
 var canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
+var model = new Model('./data/compiled/model.json', canvas, eraseButton, outputLabel, logger);
 var initializaCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
     if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
     if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
@@ -57,11 +52,11 @@ var initializaCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) 
     var _ctx = canvas.getCtxElement();
     canvas.setEvent('mousedown', function (e) {
         e.preventDefault();
-        if (modelWasLoaded === false)
+        if (model.isLoaded() === false)
             return;
         canvas.drawing = true;
-        haltPrediction = false;
-        havePredictLastDraw = false;
+        model.deactivateHalt();
+        model.lastDrawPredicted = false;
         canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
     });
     canvas.setEvent('mouseout', function (e) { return __awaiter(void 0, void 0, void 0, function () {
@@ -75,8 +70,8 @@ var initializaCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) 
                     return [4, sleep(sleepTimeOnMouseOut)];
                 case 1:
                     _a.sent();
-                    if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
-                        predictImage();
+                    if (model.isLoaded() && wasDrawing && !canvas.drawing && !model.checkHalt())
+                        model.predict(150, false);
                     return [2];
             }
         });
@@ -103,19 +98,19 @@ var initializaCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) 
                     return [4, sleep(sleepTimeOnMouseUp)];
                 case 1:
                     _a.sent();
-                    if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
-                        predictImage();
+                    if (model.isLoaded() && wasDrawing && !canvas.drawing && !model.checkHalt())
+                        model.predict(150, false);
                     return [2];
             }
         });
     }); });
     canvas.setEvent('touchstart', function (e) {
         e.preventDefault();
-        if (modelWasLoaded === false)
+        if (model.isLoaded() === false)
             return;
         canvas.drawing = true;
-        havePredictLastDraw = false;
-        haltPrediction = false;
+        model.lastDrawPredicted = false;
+        model.deactivateHalt();
         var clientRect = _canvas.getBoundingClientRect();
         var touch = e.touches[0];
         canvas.setLastCtxPosition({
@@ -149,8 +144,8 @@ var initializaCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) 
                     return [4, sleep(sleepTimeOnMouseUp)];
                 case 1:
                     _a.sent();
-                    if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
-                        predictImage();
+                    if (model.isLoaded() && wasDrawing && !canvas.drawing && !model.checkHalt())
+                        model.predict(150, false);
                     return [2];
             }
         });
@@ -168,132 +163,23 @@ function resizeTheEntirePage(pageMarginIncrease) {
     pipe.style.width = output.style.width;
     canvas.resize();
 }
-function checkHalt() {
-    if (haltPrediction === true) {
-        haltPrediction = false;
-        return true;
-    }
-    return false;
-}
-function isFirstPrediction() {
-    if (firstPrediction === true) {
-        firstPrediction = false;
-        return true;
-    }
-    return false;
-}
-function checkLastDrawPredicted() {
-    if (havePredictLastDraw === true) {
-        havePredictLastDraw = false;
-        return true;
-    }
-    return false;
-}
-function getDigitName(number) {
-    return { 0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
-        5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine'
-    }[number];
-}
-function loadDigitRecognizerModel(path) {
-    return __awaiter(this, void 0, void 0, function () {
-        var canvas;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    canvas = document.getElementById('draw-canvas');
-                    eraseButton.write('Wait');
-                    return [4, tf.loadLayersModel(path)];
-                case 1:
-                    model = _a.sent();
-                    logger.writeLog("The model was loaded successfully!");
-                    canvas.style.cursor = 'crosshair';
-                    modelWasLoaded = true;
-                    eraseButton.enable();
-                    outputLabel.defaultMessage();
-                    return [2];
-            }
-        });
-    });
-}
-function predictImage(inputSize, padding, waitTime) {
-    if (inputSize === void 0) { inputSize = 36; }
-    if (padding === void 0) { padding = 5; }
-    if (waitTime === void 0) { waitTime = 150; }
-    return __awaiter(this, void 0, void 0, function () {
-        var _canvas, inputShape, paddingShape, threeDotsSVG, InPut, error_1, output, prediction, prob, percentProb;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _canvas = canvas.getCanvasElement();
-                    inputShape = [inputSize - 2 * padding, inputSize - 2 * padding];
-                    paddingShape = [[padding, padding], [padding, padding]];
-                    threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
-                        '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
-                        '</svg>');
-                    eraseButton.disable();
-                    outputLabel.write(threeDotsSVG);
-                    InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
-                        .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    if (modelWasLoaded === false || canvas.drawing === true)
-                        throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
-                    else if (InPut.sum().dataSync()[0] === 0) {
-                        eraseButton.enable();
-                        outputLabel.write("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
-                        throw Error('Canvas has no drawing, prediction canceled!');
-                    }
-                    if (!(checkLastDrawPredicted() === false)) return [3, 3];
-                    return [4, (isFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime))];
-                case 2:
-                    _a.sent();
-                    _a.label = 3;
-                case 3:
-                    if (checkHalt() === true) {
-                        eraseButton.enable();
-                        outputLabel.defaultMessage();
-                        throw Error('Halt Received, prediction was canceled!');
-                    }
-                    return [3, 5];
-                case 4:
-                    error_1 = _a.sent();
-                    logger.writeLog(error_1);
-                    return [2, false];
-                case 5:
-                    tf.engine().startScope();
-                    output = model.predict(InPut).dataSync();
-                    prediction = tf.argMax(output).dataSync();
-                    prob = tf.max(output).dataSync()[0];
-                    percentProb = Number((prob * 100).toFixed(2));
-                    tf.engine().endScope();
-                    outputLabel.write("<div id='output-text'>The number drawn is <strong>" + prediction + "</strong> (<strong>" + getDigitName(prediction) + "</strong>)<div>");
-                    logger.writeLog("Prediction: " + prediction + " ... Certainty: " + percentProb + "%", false);
-                    eraseButton.enable();
-                    havePredictLastDraw = true;
-                    return [2];
-            }
-        });
-    });
-}
 (function (welcomeMessage) {
     initializaCanvasEvents();
     resizeTheEntirePage();
+    model.load();
     var _ctx = canvas.getCtxElement();
     var _canvas = canvas.getCanvasElement();
     eraseButton.setEvent('click', function () {
         canvas.clear();
-        if (modelWasLoaded === true)
+        if (model.isLoaded() === true)
             outputLabel.defaultMessage();
-        haltPrediction = true;
+        model.activateHalt();
     });
     window.addEventListener('resize', function () {
         resizeTheEntirePage();
-        if (modelWasLoaded === true)
+        if (model.isLoaded() === true)
             outputLabel.defaultMessage();
     });
-    loadDigitRecognizerModel('./data/compiled/model.json');
-    logger.writeLog("Logs " + (SHOW_DEBUG_LOGS ? 'enabled' : 'disabled') + ".", false, true);
     logger.writeLog(welcomeMessage, false, true);
 })('Welcome to the Digit Recognition Web App!');
 //# sourceMappingURL=main.js.map

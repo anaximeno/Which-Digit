@@ -5,22 +5,16 @@ import {
     sleep,
     max
 } from './common';
-import {Canvas} from './canvas';
+import { Canvas } from './canvas';
+import { Model } from './model';
+
 
 const logger = new Logger(true); // ALERT: debug moe active
-
-let modelWasLoaded: boolean = false;
-let haltPrediction: boolean = false;
-let havePredictLastDraw: boolean = true;
-let firstPrediction: boolean = true;
-let model: any;
-const outputLabelDefaultMsg = "<div id='output-text'>Draw any digit between <strong>"
-                          + "0</strong> to <strong>9</strong><\div>";
-const outputLabel = new OutputLabel('output', outputLabelDefaultMsg);
+const outputLabel = new OutputLabel('output', "<div id='output-text'>Draw any digit between <strong>"+
+    "0</strong> to <strong>9</strong><\div>");
 const eraseButton = new Button('erase-btn', 'Erase', 'Wait');
-const SHOW_DEBUG_LOGS = false;
-
 const canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
+const model = new Model('./data/compiled/model.json', canvas, eraseButton, outputLabel, logger);
 
 const initializaCanvasEvents = (sleepTimeOnMouseOut: number = 1500,sleepTimeOnMouseUp: number = 1350) => {
     const _canvas = canvas.getCanvasElement();
@@ -28,21 +22,21 @@ const initializaCanvasEvents = (sleepTimeOnMouseOut: number = 1500,sleepTimeOnMo
     
     canvas.setEvent('mousedown', (e: MouseEvent) => {
         e.preventDefault()
-        if (modelWasLoaded === false)
+        if (model.isLoaded() === false)
             return ;
         canvas.drawing = true;
-        haltPrediction = false;
-        havePredictLastDraw = false;
+        model.deactivateHalt();
+        model.lastDrawPredicted = false;
         canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
     });
-    
+
     canvas.setEvent('mouseout', async (e: MouseEvent) => {
         e.preventDefault()
         const wasDrawing = canvas.drawing;
         canvas.drawing = false;
         await sleep(sleepTimeOnMouseOut);
-        if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
-            predictImage();
+        if (model.isLoaded() && wasDrawing && !canvas.drawing && !model.checkHalt())
+            model.predict(150, false);
     });
     
     canvas.setEvent('mousemove', (e: MouseEvent) => {
@@ -62,17 +56,17 @@ const initializaCanvasEvents = (sleepTimeOnMouseOut: number = 1500,sleepTimeOnMo
         const wasDrawing = canvas.drawing;
         canvas.drawing = false;
         await sleep(sleepTimeOnMouseUp);
-        if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
-            predictImage();
+        if (model.isLoaded() && wasDrawing && !canvas.drawing && !model.checkHalt())
+            model.predict(150, false);
     });
     
     canvas.setEvent('touchstart', (e: TouchEvent) => {
         e.preventDefault();
-        if (modelWasLoaded === false)
+        if (model.isLoaded() === false)
             return ;
         canvas.drawing = true;
-        havePredictLastDraw = false;
-        haltPrediction = false;
+        model.lastDrawPredicted = false;
+        model.deactivateHalt();
         const clientRect = _canvas.getBoundingClientRect();
         const touch = e.touches[0];
         canvas.setLastCtxPosition({
@@ -80,7 +74,7 @@ const initializaCanvasEvents = (sleepTimeOnMouseOut: number = 1500,sleepTimeOnMo
             y: touch.pageY - clientRect.y
         });
     });
-    
+
     canvas.setEvent('touchmove', (e: TouchEvent) => {
         e.preventDefault();
         if (canvas.drawing === false)
@@ -102,8 +96,8 @@ const initializaCanvasEvents = (sleepTimeOnMouseOut: number = 1500,sleepTimeOnMo
         const wasDrawing = canvas.drawing;
         canvas.drawing = false;
         await sleep(sleepTimeOnMouseUp);
-        if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
-            predictImage();
+        if (model.isLoaded() && wasDrawing && !canvas.drawing && !model.checkHalt())
+            model.predict(150, false);
     });
 }
 
@@ -126,126 +120,26 @@ function resizeTheEntirePage(pageMarginIncrease: number = 300) {
 }
 
 
-function checkHalt(): boolean {
-    if (haltPrediction === true) {
-        haltPrediction = false;
-        return true;
-    }
-    return false;
-}
-
-
-function isFirstPrediction(): boolean {
-    if (firstPrediction === true) {
-        firstPrediction = false;
-        return true;
-    }
-    return false;
-}
-
-
-function checkLastDrawPredicted(): boolean {
-    if (havePredictLastDraw === true) {
-        havePredictLastDraw = false;
-        return true;
-    }
-    return false;
-}
-
-
-function getDigitName(number: number): string {
-    return {0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
-        5: 'Five', 6: 'Six',7: 'Seven', 8: 'Eight', 9: 'Nine'
-    }[number];
-}
-
-
-async function loadDigitRecognizerModel(path: string) {
-    const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    eraseButton.write('Wait');
-    model = await tf.loadLayersModel(path);
-    logger.writeLog("The model was loaded successfully!");
-    canvas.style.cursor = 'crosshair';
-    modelWasLoaded = true;
-    eraseButton.enable();
-    outputLabel.defaultMessage();
-}
-
-
-async function predictImage(inputSize: number = 36, padding: number = 5, waitTime: number = 150) {
-    const _canvas = canvas.getCanvasElement();
-    const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
-    const paddingShape = [[padding, padding], [padding, padding]];
-    const threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
-        '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
-    '</svg>'); // TODO: I've definetelly to rewrite this in react!
-
-    eraseButton.disable();
-    outputLabel.write(threeDotsSVG);
-
-    /* To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms. */
-    const InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
-        .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
-
-    try {
-        if (modelWasLoaded === false || canvas.drawing === true)
-            throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
-        else if (InPut.sum().dataSync()[0] === 0) {
-            eraseButton.enable();
-            outputLabel.write("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
-            throw Error('Canvas has no drawing, prediction canceled!');
-        }
-
-        if (checkLastDrawPredicted() === false)
-            await (isFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime));
-
-        if (checkHalt() === true) {
-            eraseButton.enable();
-            outputLabel.defaultMessage();
-            throw Error('Halt Received, prediction was canceled!');
-        }
-    } catch (error) {
-        logger.writeLog(error);
-        return false;
-    }
-
-    tf.engine().startScope(); //Prevents high usage of gpu
-    const output = model.predict(InPut).dataSync();
-    const prediction: number = tf.argMax(output).dataSync();
-    const prob: number = tf.max(output).dataSync()[0];
-    const percentProb = Number((prob * 100).toFixed(2));
-    tf.engine().endScope(); //Prevents high usage of gpu
-    outputLabel.write(
-        `<div id='output-text'>The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)<\div>`
-    );
-    
-    logger.writeLog(`Prediction: ${prediction} ... Certainty: ${percentProb}%`, false);
-    eraseButton.enable();
-    havePredictLastDraw = true;
-}
-
-
 (function (welcomeMessage: string) {    
     initializaCanvasEvents();
     resizeTheEntirePage();
+    model.load();
 
     const _ctx = canvas.getCtxElement();
     const _canvas = canvas.getCanvasElement();
 
     eraseButton.setEvent('click', () => {
         canvas.clear();
-        if (modelWasLoaded === true)
+        if (model.isLoaded() === true)
             outputLabel.defaultMessage();
-        haltPrediction = true;
+        model.activateHalt();
     });
 
     window.addEventListener('resize', () => {
         resizeTheEntirePage();
-        if (modelWasLoaded === true)
+        if (model.isLoaded() === true)
             outputLabel.defaultMessage();
     });
 
-    loadDigitRecognizerModel('./data/compiled/model.json');
-    logger.writeLog(`Logs ${SHOW_DEBUG_LOGS ? 'enabled' : 'disabled'}.`, false, true);
     logger.writeLog(welcomeMessage, false, true);
 }) ('Welcome to the Digit Recognition Web App!');

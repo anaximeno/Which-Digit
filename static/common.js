@@ -115,6 +115,7 @@ var Logger = (function () {
             }
             _this.saveLog(message, Logger.getTime());
         };
+        this.writeLog("Logs " + (this.debugMode ? 'enabled' : 'disabled') + ".", false, true);
     }
     Logger.getTime = function () {
         var zeroPad = function (n) {
