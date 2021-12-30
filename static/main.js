@@ -36,10 +36,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 export const __esModule = true;
-import { OutputLabel, Button, max, min, sleep } from "./common.js";
-var lastCTXPos = { x: 0, y: 0 };
+import { OutputLabel, Button, sleep, max } from "./common.js";
+import { Canvas } from "./canvas.js";
 var modelWasLoaded = false;
-var drawing = false;
 var haltPrediction = false;
 var havePredictLastDraw = true;
 var firstPrediction = true;
@@ -49,40 +48,124 @@ var outputLabelDefaultMsg = "<div id='output-text'>Draw any digit between <stron
 var outputLabel = new OutputLabel('output', outputLabelDefaultMsg);
 var eraseButton = new Button('erase-btn', 'Erase', 'Wait');
 var SHOW_DEBUG_LOGS = false;
-function resizePage(canvas, pageAddSize) {
-    if (pageAddSize === void 0) { pageAddSize = 300; }
+var canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
+var initializaCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
+    if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
+    if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
+    var _canvas = canvas.getCanvasElement();
+    var _ctx = canvas.getCtxElement();
+    canvas.setEvent('mousedown', function (e) {
+        e.preventDefault();
+        if (modelWasLoaded === false)
+            return;
+        canvas.drawing = true;
+        haltPrediction = false;
+        havePredictLastDraw = false;
+        canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
+    });
+    canvas.setEvent('mouseout', function (e) { return __awaiter(void 0, void 0, void 0, function () {
+        var wasDrawing;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    e.preventDefault();
+                    wasDrawing = canvas.drawing;
+                    canvas.drawing = false;
+                    return [4, sleep(sleepTimeOnMouseOut)];
+                case 1:
+                    _a.sent();
+                    if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
+                        predictImage();
+                    return [2];
+            }
+        });
+    }); });
+    canvas.setEvent('mousemove', function (e) {
+        e.preventDefault();
+        if (canvas.drawing === false)
+            return;
+        var _a = canvas.getLastCtxPosition(), x = _a.x, y = _a.y;
+        _ctx.beginPath();
+        _ctx.moveTo(x, y);
+        _ctx.lineTo(e.offsetX, e.offsetY);
+        _ctx.stroke();
+        canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
+    });
+    canvas.setEvent('mouseup', function (e) { return __awaiter(void 0, void 0, void 0, function () {
+        var wasDrawing;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    e.preventDefault();
+                    wasDrawing = canvas.drawing;
+                    canvas.drawing = false;
+                    return [4, sleep(sleepTimeOnMouseUp)];
+                case 1:
+                    _a.sent();
+                    if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
+                        predictImage();
+                    return [2];
+            }
+        });
+    }); });
+    canvas.setEvent('touchstart', function (e) {
+        e.preventDefault();
+        if (modelWasLoaded === false)
+            return;
+        canvas.drawing = true;
+        havePredictLastDraw = false;
+        haltPrediction = false;
+        var clientRect = _canvas.getBoundingClientRect();
+        var touch = e.touches[0];
+        canvas.setLastCtxPosition({
+            x: touch.pageX - clientRect.x,
+            y: touch.pageY - clientRect.y
+        });
+    });
+    canvas.setEvent('touchmove', function (e) {
+        e.preventDefault();
+        if (canvas.drawing === false)
+            return;
+        var clientRect = _canvas.getBoundingClientRect();
+        var touch = e.touches[0];
+        var _a = canvas.getLastCtxPosition(), x = _a.x, y = _a.y;
+        _ctx.beginPath();
+        _ctx.moveTo(x, y);
+        x = touch.pageX - clientRect.x;
+        y = touch.pageY - clientRect.y;
+        _ctx.lineTo(x, y);
+        _ctx.stroke();
+        canvas.setLastCtxPosition({ x: x, y: y });
+    });
+    canvas.setEvent('touchend', function (e) { return __awaiter(void 0, void 0, void 0, function () {
+        var wasDrawing;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    e.preventDefault();
+                    wasDrawing = canvas.drawing;
+                    canvas.drawing = false;
+                    return [4, sleep(sleepTimeOnMouseUp)];
+                case 1:
+                    _a.sent();
+                    if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
+                        predictImage();
+                    return [2];
+            }
+        });
+    }); });
+};
+function resizeTheEntirePage(pageMarginIncrease) {
+    if (pageMarginIncrease === void 0) { pageMarginIncrease = 300; }
+    var innerH = window.innerHeight;
     var output = document.getElementById('output');
     var pipe = document.getElementById('pipeline');
     var main = document.getElementsByTagName('html')[0];
-    var innerH = window.innerHeight;
-    main.style.height = max(innerH, pageAddSize + calculateNewCanvasSize()).toString() + "px";
-    output.style.width = pipe.style.width = calculateNewCanvasSize().toString() + "px";
-    resizeCanvas(canvas);
-}
-function calculateNewCanvasSize(maxSize, increaseSize) {
-    if (maxSize === void 0) { maxSize = 400; }
-    if (increaseSize === void 0) { increaseSize = 30; }
-    var innerW = window.innerWidth;
-    var outerW = window.outerWidth;
-    var width = min(innerW, outerW) || innerW;
-    return width > (maxSize + increaseSize) ? maxSize : (width - increaseSize);
-}
-function calculateNewCtxSize(maxCTXSize, maxCanvasSize) {
-    if (maxCTXSize === void 0) { maxCTXSize = 22; }
-    if (maxCanvasSize === void 0) { maxCanvasSize = 400; }
-    return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
-}
-function resizeCanvas(canvas, maxCanvasSize, maxCTXSize) {
-    if (maxCanvasSize === void 0) { maxCanvasSize = 400; }
-    if (maxCTXSize === void 0) { maxCTXSize = 22; }
-    var _canvas = canvas || document.getElementById('draw-canvas');
-    var _ctx = _canvas.getContext('2d');
-    _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize);
-    _ctx.lineWidth = calculateNewCtxSize(maxCTXSize, maxCanvasSize);
-    _ctx.strokeStyle = 'white';
-    _ctx.fillStyle = 'white';
-    _ctx.lineJoin = 'round';
-    _ctx.lineCap = 'round';
+    var canvasSize = canvas.canvasBetterSize();
+    main.style.height = max(innerH, pageMarginIncrease + canvasSize).toString() + "px";
+    output.style.width = canvasSize.toString() + "px";
+    pipe.style.width = output.style.width;
+    canvas.resize();
 }
 function checkHalt() {
     if (haltPrediction === true) {
@@ -125,110 +208,11 @@ function getDigitName(number) {
     }[number];
 }
 function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
-    var _this = this;
     if (canvas === void 0) { canvas = undefined; }
     if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
     if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
     var _canvas = canvas || document.getElementById('draw-canvas');
     var ctx = _canvas.getContext('2d');
-    _canvas.addEventListener('mousedown', function (e) {
-        e.preventDefault();
-        if (modelWasLoaded === false)
-            return;
-        drawing = true;
-        haltPrediction = false;
-        havePredictLastDraw = false;
-        lastCTXPos = { x: e.offsetX, y: e.offsetY };
-    });
-    _canvas.addEventListener('mouseout', function (e) { return __awaiter(_this, void 0, void 0, function () {
-        var wasDrawing;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    e.preventDefault();
-                    wasDrawing = drawing;
-                    drawing = false;
-                    return [4, sleep(sleepTimeOnMouseOut)];
-                case 1:
-                    _a.sent();
-                    if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-                        predictImage(_canvas);
-                    return [2];
-            }
-        });
-    }); });
-    _canvas.addEventListener('mousemove', function (e) {
-        e.preventDefault();
-        if (drawing === false)
-            return;
-        ctx.beginPath();
-        ctx.moveTo(lastCTXPos.x, lastCTXPos.y);
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-        lastCTXPos = { x: e.offsetX, y: e.offsetY };
-    });
-    _canvas.addEventListener('mouseup', function (e) { return __awaiter(_this, void 0, void 0, function () {
-        var wasDrawing;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    e.preventDefault();
-                    wasDrawing = drawing;
-                    drawing = false;
-                    return [4, sleep(sleepTimeOnMouseUp)];
-                case 1:
-                    _a.sent();
-                    if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-                        predictImage(_canvas);
-                    return [2];
-            }
-        });
-    }); });
-    _canvas.addEventListener('touchstart', function (e) {
-        e.preventDefault();
-        if (modelWasLoaded === false)
-            return;
-        drawing = true;
-        havePredictLastDraw = false;
-        haltPrediction = false;
-        var clientRect = _canvas.getBoundingClientRect();
-        var touch = e.touches[0];
-        lastCTXPos = {
-            x: touch.pageX - clientRect.x,
-            y: touch.pageY - clientRect.y
-        };
-    });
-    _canvas.addEventListener('touchmove', function (e) {
-        e.preventDefault();
-        if (drawing === false)
-            return;
-        var clientRect = _canvas.getBoundingClientRect();
-        var touch = e.touches[0];
-        var x = touch.pageX - clientRect.x;
-        var y = touch.pageY - clientRect.y;
-        ctx.beginPath();
-        ctx.moveTo(lastCTXPos.x, lastCTXPos.y);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        lastCTXPos = { x: x, y: y };
-    });
-    _canvas.addEventListener('touchend', function (e) { return __awaiter(_this, void 0, void 0, function () {
-        var wasDrawing;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    e.preventDefault();
-                    wasDrawing = drawing;
-                    drawing = false;
-                    return [4, sleep(sleepTimeOnMouseUp)];
-                case 1:
-                    _a.sent();
-                    if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-                        predictImage(_canvas);
-                    return [2];
-            }
-        });
-    }); });
 }
 function loadDigitRecognizerModel(path) {
     return __awaiter(this, void 0, void 0, function () {
@@ -251,19 +235,18 @@ function loadDigitRecognizerModel(path) {
         });
     });
 }
-function predictImage(canvas, inputSize, padding, waitTime) {
-    if (canvas === void 0) { canvas = undefined; }
+function predictImage(inputSize, padding, waitTime) {
     if (inputSize === void 0) { inputSize = 36; }
     if (padding === void 0) { padding = 5; }
     if (waitTime === void 0) { waitTime = 150; }
     return __awaiter(this, void 0, void 0, function () {
-        var inputShape, paddingShape, _canvas, threeDotsSVG, InPut, error_1, output, prediction, prob, percentProb;
+        var _canvas, inputShape, paddingShape, threeDotsSVG, InPut, error_1, output, prediction, prob, percentProb;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    _canvas = canvas.getCanvasElement();
                     inputShape = [inputSize - 2 * padding, inputSize - 2 * padding];
                     paddingShape = [[padding, padding], [padding, padding]];
-                    _canvas = canvas || document.getElementById('draw-canvas');
                     threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
                         '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
                         '</svg>');
@@ -274,7 +257,7 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
-                    if (modelWasLoaded === false || drawing === true)
+                    if (modelWasLoaded === false || canvas.drawing === true)
                         throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
                     else if (InPut.sum().dataSync()[0] === 0) {
                         eraseButton.enable();
@@ -314,18 +297,18 @@ function predictImage(canvas, inputSize, padding, waitTime) {
     });
 }
 (function (welcomeMessage) {
-    var canvas = document.getElementById('draw-canvas');
-    setCanvasEvents(canvas);
-    resizePage(canvas);
-    var ctx = canvas.getContext('2d');
+    initializaCanvasEvents();
+    resizeTheEntirePage();
+    var _ctx = canvas.getCtxElement();
+    var _canvas = canvas.getCanvasElement();
     eraseButton.setEvent('click', function () {
-        ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
+        canvas.clear();
         if (modelWasLoaded === true)
             outputLabel.defaultMessage();
         haltPrediction = true;
     });
     window.addEventListener('resize', function () {
-        resizePage(canvas);
+        resizeTheEntirePage();
         if (modelWasLoaded === true)
             outputLabel.defaultMessage();
     });

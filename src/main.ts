@@ -1,16 +1,8 @@
-import {
-    CtxPosI,
-    OutputLabel,
-    Button,
-    sleep,
-    min,
-    max,
-} from './common';
+import {OutputLabel, Button, sleep, max} from './common';
+import {Canvas} from './canvas';
 
 
-let lastCTXPos: CtxPosI = {x: 0, y: 0};
 let modelWasLoaded: boolean = false;
-let drawing: boolean = false;
 let haltPrediction: boolean = false;
 let havePredictLastDraw: boolean = true;
 let firstPrediction: boolean = true;
@@ -21,40 +13,112 @@ const outputLabel = new OutputLabel('output', outputLabelDefaultMsg);
 const eraseButton = new Button('erase-btn', 'Erase', 'Wait');
 const SHOW_DEBUG_LOGS = false;
 
+const canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
 
-function resizePage(canvas?: HTMLCanvasElement, pageAddSize: number = 300) {
-    const output: HTMLElement = document.getElementById('output');
-    const pipe: HTMLElement = document.getElementById('pipeline');
-    const main: HTMLElement = document.getElementsByTagName('html')[0];
-    const innerH: number = window.innerHeight;
-    main.style.height = max(innerH, pageAddSize + calculateNewCanvasSize()).toString() + "px";
-    output.style.width = pipe.style.width = calculateNewCanvasSize().toString() + "px";
-    resizeCanvas(canvas);
+const initializaCanvasEvents = (
+    sleepTimeOnMouseOut: number = 1500,
+    sleepTimeOnMouseUp: number = 1350
+) => {
+    const _canvas = canvas.getCanvasElement();
+    const _ctx = canvas.getCtxElement();
+    
+    canvas.setEvent('mousedown', (e: MouseEvent) => {
+        e.preventDefault()
+        if (modelWasLoaded === false)
+            return ;
+        canvas.drawing = true;
+        haltPrediction = false;
+        havePredictLastDraw = false;
+        canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
+    });
+    
+    canvas.setEvent('mouseout', async (e: MouseEvent) => {
+        e.preventDefault()
+        const wasDrawing = canvas.drawing;
+        canvas.drawing = false;
+        await sleep(sleepTimeOnMouseOut);
+        if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
+            predictImage();
+    });
+    
+    canvas.setEvent('mousemove', (e: MouseEvent) => {
+        e.preventDefault()
+        if (canvas.drawing === false)
+            return ;
+        let {x, y} = canvas.getLastCtxPosition();
+        _ctx.beginPath();
+        _ctx.moveTo(x, y);
+        _ctx.lineTo(e.offsetX, e.offsetY);
+        _ctx.stroke();
+        canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
+    });
+    
+    canvas.setEvent('mouseup', async (e: MouseEvent) => {
+        e.preventDefault()
+        const wasDrawing = canvas.drawing;
+        canvas.drawing = false;
+        await sleep(sleepTimeOnMouseUp);
+        if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
+            predictImage();
+    });
+    
+    canvas.setEvent('touchstart', (e: TouchEvent) => {
+        e.preventDefault();
+        if (modelWasLoaded === false)
+            return ;
+        canvas.drawing = true;
+        havePredictLastDraw = false;
+        haltPrediction = false;
+        const clientRect = _canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        canvas.setLastCtxPosition({
+            x: touch.pageX - clientRect.x,
+            y: touch.pageY - clientRect.y
+        });
+    });
+    
+    canvas.setEvent('touchmove', (e: TouchEvent) => {
+        e.preventDefault();
+        if (canvas.drawing === false)
+            return ;
+        const clientRect = _canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        let {x, y} = canvas.getLastCtxPosition();
+        _ctx.beginPath();
+        _ctx.moveTo(x, y);
+        x = touch.pageX - clientRect.x;
+        y = touch.pageY - clientRect.y;
+        _ctx.lineTo(x, y);
+        _ctx.stroke();
+        canvas.setLastCtxPosition({ x, y });
+    });
+    
+    canvas.setEvent('touchend', async (e: TouchEvent) => {
+        e.preventDefault()
+        const wasDrawing = canvas.drawing;
+        canvas.drawing = false;
+        await sleep(sleepTimeOnMouseUp);
+        if (modelWasLoaded && wasDrawing && !canvas.drawing && !checkHalt())
+            predictImage();
+    });
 }
 
+function resizeTheEntirePage(pageMarginIncrease: number = 300) {
+    const innerH = window.innerHeight;
+    const output = document.getElementById('output');
+    const pipe = document.getElementById('pipeline');
+    const main = document.getElementsByTagName('html')[0];
 
-function calculateNewCanvasSize(maxSize: number = 400, increaseSize: number = 30): number {
-    const innerW: number = window.innerWidth;
-    const outerW: number = window.outerWidth;
-    const width: number = min(innerW, outerW) || innerW;
-    return width > (maxSize + increaseSize) ? maxSize : (width - increaseSize);
-}
+    const canvasSize = canvas.canvasBetterSize();
 
+    main.style.height = max(
+        innerH, pageMarginIncrease + canvasSize
+    ).toString() + "px";
 
-function calculateNewCtxSize(maxCTXSize: number = 22, maxCanvasSize: number = 400): number {
-    return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
-}
+    output.style.width = canvasSize.toString() + "px"
+    pipe.style.width = output.style.width;
 
-
-function resizeCanvas(canvas?: HTMLCanvasElement, maxCanvasSize: number = 400, maxCTXSize: number = 22) {
-    const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    const _ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
-    _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize);
-    _ctx.lineWidth = calculateNewCtxSize(maxCTXSize, maxCanvasSize);
-    _ctx.strokeStyle = 'white';
-    _ctx.fillStyle = 'white';
-    _ctx.lineJoin = 'round';
-    _ctx.lineCap = 'round';
+    canvas.resize();
 }
 
 
@@ -113,83 +177,7 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
     const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     const ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
 
-    _canvas.addEventListener('mousedown', (e) => {
-        e.preventDefault()
-        if (modelWasLoaded === false)
-            return ;
-        drawing = true;
-        haltPrediction = false;
-        havePredictLastDraw = false;
-        lastCTXPos = { x: e.offsetX, y: e.offsetY };
-    });
-
-    _canvas.addEventListener('mouseout', async (e) => {
-        e.preventDefault()
-        const wasDrawing: boolean = drawing;
-        drawing = false;
-        await sleep(sleepTimeOnMouseOut);
-        if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-            predictImage(_canvas);
-    });
-
-    _canvas.addEventListener('mousemove', (e) => {
-        e.preventDefault()
-        if (drawing === false)
-            return ;
-        ctx.beginPath();
-        ctx.moveTo(lastCTXPos.x, lastCTXPos.y);
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-        lastCTXPos = { x: e.offsetX, y: e.offsetY };
-    });
-
-    _canvas.addEventListener('mouseup', async (e) => {
-        e.preventDefault()
-        const wasDrawing: boolean = drawing;
-        drawing = false;
-        await sleep(sleepTimeOnMouseUp);
-        if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-            predictImage(_canvas);
-    });
-
-    _canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (modelWasLoaded === false)
-            return ;
-        drawing = true;
-        havePredictLastDraw = false;
-        haltPrediction = false;
-        const clientRect: DOMRect = _canvas.getBoundingClientRect();
-        const touch: Touch = e.touches[0];
-        lastCTXPos = {
-            x: touch.pageX - clientRect.x,
-            y: touch.pageY - clientRect.y
-        };
-    });
-
-    _canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (drawing === false)
-            return ;
-        const clientRect: DOMRect = _canvas.getBoundingClientRect();
-        const touch: Touch = e.touches[0];
-        let x: number = touch.pageX - clientRect.x;
-        let y: number = touch.pageY - clientRect.y;
-        ctx.beginPath();
-        ctx.moveTo(lastCTXPos.x, lastCTXPos.y);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        lastCTXPos = { x, y };
-    });
-
-    _canvas.addEventListener('touchend', async (e) => {
-        e.preventDefault()
-        const wasDrawing: boolean = drawing;
-        drawing = false;
-        await sleep(sleepTimeOnMouseUp);
-        if (modelWasLoaded && wasDrawing && !drawing && !checkHalt())
-            predictImage(_canvas);
-    });
+    
 }
 
 
@@ -205,10 +193,10 @@ async function loadDigitRecognizerModel(path: string) {
 }
 
 
-async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: number = 36, padding: number = 5, waitTime: number = 150) {
+async function predictImage(inputSize: number = 36, padding: number = 5, waitTime: number = 150) {
+    const _canvas = canvas.getCanvasElement();
     const inputShape = [inputSize - 2*padding, inputSize - 2*padding];
     const paddingShape = [[padding, padding], [padding, padding]];
-    const _canvas = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     const threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
         '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
     '</svg>'); // TODO: I've definetelly to rewrite this in react!
@@ -221,7 +209,7 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
 
     try {
-        if (modelWasLoaded === false || drawing === true)
+        if (modelWasLoaded === false || canvas.drawing === true)
             throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
         else if (InPut.sum().dataSync()[0] === 0) {
             eraseButton.enable();
@@ -258,18 +246,22 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
 }
 
 
-(function (welcomeMessage: string) {
-    const canvas = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    setCanvasEvents(canvas); resizePage(canvas);
-    const ctx = canvas.getContext('2d');
+(function (welcomeMessage: string) {    
+    initializaCanvasEvents();
+    resizeTheEntirePage();
+
+    const _ctx = canvas.getCtxElement();
+    const _canvas = canvas.getCanvasElement();
+
     eraseButton.setEvent('click', () => {
-        ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
+        canvas.clear();
         if (modelWasLoaded === true)
             outputLabel.defaultMessage();
         haltPrediction = true;
     });
+
     window.addEventListener('resize', () => {
-        resizePage(canvas);
+        resizeTheEntirePage();
         if (modelWasLoaded === true)
             outputLabel.defaultMessage();
     });

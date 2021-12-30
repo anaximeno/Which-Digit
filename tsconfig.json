@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"rootDir": "./src/",
 		"outDir": "./static/",
-		"lib": ["es5", "dom"],
+		"lib": ["es6", "dom"],
 		"removeComments": true,
 		"sourceMap": true,
 		"esModuleInterop": true
