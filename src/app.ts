@@ -10,7 +10,6 @@ export interface AppDefinitionsI {
 };
 
 
-// TODO: implement the app main class
 export class App {
     private appDefinitions: AppDefinitionsI;
 
