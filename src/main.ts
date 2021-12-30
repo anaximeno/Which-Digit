@@ -1,4 +1,3 @@
-
 import { Canvas } from './canvas';
 import { Logger, OutputLabel, Button} from './common';
 import { Model } from './model'

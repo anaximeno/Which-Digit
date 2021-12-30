@@ -134,11 +134,13 @@ export class App {
         if (definition) {
             this.appDefinitions = definition;
         }
-        this.initializeCanvasEvents(
-            this.appDefinitions.sleepTimeOnMouseOut,
-            this.appDefinitions.sleepTimeOnMouseUp
-        );
-        this.resizeTheEntirePage(this.appDefinitions.pageMarginIncrease);
+        const {
+            sleepTimeOnMouseOut,
+            sleepTimeOnMouseUp,
+            pageMarginIncrease
+        } = this.appDefinitions;
+        this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
+        this.resizeTheEntirePage(pageMarginIncrease);
         this.model.load();
         this.eraseButton.setEvent('click', () => {
             this.canvas.clear();
