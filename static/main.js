@@ -1,16 +1,4 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -47,93 +35,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-;
-var lastCTXPos;
-var modelWasLoaded;
-var drawing;
-var haltPrediction;
-var havePredictLastDraw;
-var firstPrediction;
+export const __esModule = true;
+import { OutputLabel, Button, max, min, sleep } from "./common.js";
+var lastCTXPos = { x: 0, y: 0 };
+var modelWasLoaded = false;
+var drawing = false;
+var haltPrediction = false;
+var havePredictLastDraw = true;
+var firstPrediction = true;
 var model;
-lastCTXPos = { x: 0, y: 0 };
-modelWasLoaded = false;
-drawing = false;
-haltPrediction = false;
-havePredictLastDraw = false;
-firstPrediction = true;
+var outputLabelDefaultMsg = "<div id='output-text'>Draw any digit between <strong>"
+    + "0</strong> to <strong>9</strong><\div>";
+var outputLabel = new OutputLabel('output', outputLabelDefaultMsg);
+var eraseButton = new Button('erase-btn', 'Erase', 'Wait');
 var SHOW_DEBUG_LOGS = false;
-var SectionController = (function () {
-    function SectionController(id, defaultMsg) {
-        this.selector = id;
-        this.element = document.getElementById(this.selector);
-        this.defaultMessage = defaultMsg;
-    }
-    SectionController.prototype.print = function (message) {
-        this.element.innerHTML = message;
-    };
-    SectionController.prototype.printDefaultMessage = function () {
-        this.print(this.defaultMessage);
-    };
-    SectionController.setOpacity = function (id, value, title) {
-        var element = document.getElementById(id);
-        element.style.opacity = value.toString();
-        element.title = title;
-    };
-    return SectionController;
-}());
-;
-var ButtonController = (function (_super) {
-    __extends(ButtonController, _super);
-    function ButtonController(id, defaultMsg, disabledMsg) {
-        var _this = _super.call(this, id, defaultMsg) || this;
-        _this._btn_element = _this.element;
-        _this._disabledMsg = disabledMsg;
-        return _this;
-    }
-    ButtonController.prototype.enable = function () {
-        this._btn_element.disabled = false;
-        this.printDefaultMessage();
-    };
-    ButtonController.prototype.disable = function () {
-        this._btn_element.disabled = true;
-        this.print(this._disabledMsg);
-    };
-    ButtonController.prototype.setEvent = function (event, listener) {
-        this._btn_element.addEventListener(event, listener);
-    };
-    return ButtonController;
-}(SectionController));
-var outSection = new SectionController('output', "<div id='output-text'>Draw any digit between <strong>0</strong> to <strong>9</strong><\div>");
-var clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait');
-function sleep(milisecs) {
-    return new Promise(function (resolve) { return setTimeout(resolve, milisecs); });
-}
-function min() {
-    var args = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-    }
-    if (args.length < 2)
-        throw Error('At least 2 elements are required for calculating the minimum!');
-    var minimun = args[0];
-    for (var i = 1; i < args.length; ++i)
-        minimun = minimun > args[i] ? args[i] : minimun;
-    return minimun;
-}
-function max() {
-    var args = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-    }
-    if (args.length < 2)
-        throw Error('At least 2 elements are required for calculating the maximum!');
-    var maximum = args[0];
-    for (var i = 1; i < args.length; ++i)
-        maximum = maximum < args[i] ? args[i] : maximum;
-    return maximum;
-}
 function resizePage(canvas, pageAddSize) {
-    if (canvas === void 0) { canvas = undefined; }
     if (pageAddSize === void 0) { pageAddSize = 300; }
     var output = document.getElementById('output');
     var pipe = document.getElementById('pipeline');
@@ -157,7 +73,6 @@ function calculateNewCtxSize(maxCTXSize, maxCanvasSize) {
     return (calculateNewCanvasSize(maxCanvasSize) * maxCTXSize) / maxCanvasSize;
 }
 function resizeCanvas(canvas, maxCanvasSize, maxCTXSize) {
-    if (canvas === void 0) { canvas = undefined; }
     if (maxCanvasSize === void 0) { maxCanvasSize = 400; }
     if (maxCTXSize === void 0) { maxCTXSize = 22; }
     var _canvas = canvas || document.getElementById('draw-canvas');
@@ -322,15 +237,15 @@ function loadDigitRecognizerModel(path) {
             switch (_a.label) {
                 case 0:
                     canvas = document.getElementById('draw-canvas');
-                    clearBtn.print('Wait');
+                    eraseButton.write('Wait');
                     return [4, tf.loadLayersModel(path)];
                 case 1:
                     model = _a.sent();
                     writeLog("The model was loaded successfully!");
                     canvas.style.cursor = 'crosshair';
                     modelWasLoaded = true;
-                    clearBtn.enable();
-                    outSection.printDefaultMessage();
+                    eraseButton.enable();
+                    outputLabel.defaultMessage();
                     return [2];
             }
         });
@@ -352,8 +267,8 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     threeDotsSVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">' +
                         '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
                         '</svg>');
-                    clearBtn.disable();
-                    outSection.print(threeDotsSVG);
+                    eraseButton.disable();
+                    outputLabel.write(threeDotsSVG);
                     InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
                         .mean(2).pad(paddingShape).expandDims().expandDims(3).toFloat().div(255.0);
                     _a.label = 1;
@@ -362,8 +277,8 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     if (modelWasLoaded === false || drawing === true)
                         throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
                     else if (InPut.sum().dataSync()[0] === 0) {
-                        clearBtn.enable();
-                        outSection.print("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
+                        eraseButton.enable();
+                        outputLabel.write("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
                         throw Error('Canvas has no drawing, prediction canceled!');
                     }
                     if (!(checkLastDrawPredicted() === false)) return [3, 3];
@@ -373,8 +288,8 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     _a.label = 3;
                 case 3:
                     if (checkHalt() === true) {
-                        clearBtn.enable();
-                        outSection.printDefaultMessage();
+                        eraseButton.enable();
+                        outputLabel.defaultMessage();
                         throw Error('Halt Received, prediction was canceled!');
                     }
                     return [3, 5];
@@ -389,10 +304,9 @@ function predictImage(canvas, inputSize, padding, waitTime) {
                     prob = tf.max(output).dataSync()[0];
                     percentProb = Number((prob * 100).toFixed(2));
                     tf.engine().endScope();
-                    outSection.print("<div id='output-text'>The number drawn is <strong>" + prediction + "</strong> (<strong>" + getDigitName(prediction) + "</strong>)<div>");
-                    SectionController.setOpacity('output-text', 1, percentProb + "% certain.");
+                    outputLabel.write("<div id='output-text'>The number drawn is <strong>" + prediction + "</strong> (<strong>" + getDigitName(prediction) + "</strong>)<div>");
                     writeLog("Prediction: " + prediction + " ... Certainty: " + percentProb + "%", false);
-                    clearBtn.enable();
+                    eraseButton.enable();
                     havePredictLastDraw = true;
                     return [2];
             }
@@ -404,18 +318,16 @@ function predictImage(canvas, inputSize, padding, waitTime) {
     setCanvasEvents(canvas);
     resizePage(canvas);
     var ctx = canvas.getContext('2d');
-    clearBtn.setEvent('click', function () {
+    eraseButton.setEvent('click', function () {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
-            outSection.printDefaultMessage();
-        SectionController.setOpacity('output-text', 1, '');
+            outputLabel.defaultMessage();
         haltPrediction = true;
     });
     window.addEventListener('resize', function () {
         resizePage(canvas);
         if (modelWasLoaded === true)
-            outSection.printDefaultMessage();
-        SectionController.setOpacity('output-text', 1, '');
+            outputLabel.defaultMessage();
     });
     loadDigitRecognizerModel('./data/compiled/model.json');
     console.log("Logs " + (SHOW_DEBUG_LOGS ? 'enabled' : 'disabled') + ".");

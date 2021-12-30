@@ -1,9 +1,12 @@
 {
 	"compilerOptions": {
-		"outFile": "./src/scripts/static/main.js",
-		"lib": ["es6", "dom"],
+		"rootDir": "./src/",
+		"outDir": "./static/",
+		"lib": ["es5", "dom"],
 		"removeComments": true,
-		"sourceMap": true
+		"sourceMap": true,
+		"esModuleInterop": true
 	},
-	"file": ["./src/scripts/main.ts"]
+	"compileOnSave": true,
+	"esModuleInterop": true,
 }

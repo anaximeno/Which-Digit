@@ -1,109 +1,28 @@
-interface BiDimensionalPositionInteface {
-    x: number; y: number;
-};
+import {
+    CtxPosI,
+    OutputLabel,
+    Button,
+    sleep,
+    min,
+    max,
+} from './common';
 
-let lastCTXPos: BiDimensionalPositionInteface;
-let modelWasLoaded: boolean;
-let drawing: boolean;
-let haltPrediction: boolean;
-let havePredictLastDraw: boolean;
-let firstPrediction: boolean;
+
+let lastCTXPos: CtxPosI = {x: 0, y: 0};
+let modelWasLoaded: boolean = false;
+let drawing: boolean = false;
+let haltPrediction: boolean = false;
+let havePredictLastDraw: boolean = true;
+let firstPrediction: boolean = true;
 let model: any;
-
-lastCTXPos = {x: 0, y: 0};
-modelWasLoaded = false;
-drawing = false;
-haltPrediction = false;
-havePredictLastDraw = false;
-firstPrediction = true;
-
-
-
+const outputLabelDefaultMsg = "<div id='output-text'>Draw any digit between <strong>"
+                          + "0</strong> to <strong>9</strong><\div>";
+const outputLabel = new OutputLabel('output', outputLabelDefaultMsg);
+const eraseButton = new Button('erase-btn', 'Erase', 'Wait');
 const SHOW_DEBUG_LOGS = false;
 
 
-
-class SectionController {
-    private readonly selector: string;
-    protected readonly defaultMessage: string;
-    protected readonly element: HTMLElement;
-    constructor(id: string, defaultMsg: string) {
-        this.selector = id;
-        this.element = document.getElementById(this.selector);
-        this.defaultMessage = defaultMsg;
-    }
-    print(message: string) {
-        this.element.innerHTML = message;
-    }
-    printDefaultMessage() {
-        this.print(this.defaultMessage);
-    }
-    static setOpacity (id: string, value: number, title: string) {
-        const element: HTMLElement = (document.getElementById(id) as unknown) as HTMLElement;
-        element.style.opacity = value.toString();
-        element.title = title;
-    }
-};
-
-
-class ButtonController extends SectionController {
-    protected readonly _btn_element: HTMLButtonElement;
-    protected readonly _disabledMsg: string;
-    constructor(id: string, defaultMsg: string, disabledMsg: string) {
-        super(id, defaultMsg);
-        this._btn_element = (this.element as unknown) as HTMLButtonElement;
-        this._disabledMsg = disabledMsg;
-    }
-    enable() {
-        this._btn_element.disabled = false;
-        this.printDefaultMessage();
-    }
-    disable() {
-        this._btn_element.disabled = true;
-        this.print(this._disabledMsg);
-    }
-    setEvent(event: string, listener: any) {
-        this._btn_element.addEventListener(event, listener);
-    }
-}
-
-
-const outSection = new SectionController(
-    'output', "<div id='output-text'>Draw any digit between <strong>0</strong> to <strong>9</strong><\div>"
-);
-
-const clearBtn = new ButtonController('clear-btn', 'Erase', 'Wait');
-
-
-function sleep(milisecs: number): Promise<unknown> {
-    // Stops the execution by 'milisecs' miliseconds.
-    return new Promise(resolve => setTimeout(resolve, milisecs));
-}
-
-
-function min(...args: number[]): number
-{
-    if (args.length < 2)
-        throw Error('At least 2 elements are required for calculating the minimum!');
-    let minimun: number = args[0];
-    for (let i = 1 ; i < args.length ; ++i)
-        minimun = minimun > args[i] ? args[i] : minimun;
-    return minimun;
-}
-
-
-function max(...args: number[]): number
-{
-    if (args.length < 2)
-        throw Error('At least 2 elements are required for calculating the maximum!');
-    let maximum: number = args[0];
-    for (let i = 1 ; i < args.length ; ++i)
-        maximum = maximum < args[i] ? args[i] : maximum;
-    return maximum;
-}
-
-
-function resizePage(canvas: HTMLCanvasElement | any = undefined, pageAddSize: number = 300) {
+function resizePage(canvas?: HTMLCanvasElement, pageAddSize: number = 300) {
     const output: HTMLElement = document.getElementById('output');
     const pipe: HTMLElement = document.getElementById('pipeline');
     const main: HTMLElement = document.getElementsByTagName('html')[0];
@@ -127,7 +46,7 @@ function calculateNewCtxSize(maxCTXSize: number = 22, maxCanvasSize: number = 40
 }
 
 
-function resizeCanvas(canvas: HTMLCanvasElement = undefined, maxCanvasSize: number = 400, maxCTXSize: number = 22) {
+function resizeCanvas(canvas?: HTMLCanvasElement, maxCanvasSize: number = 400, maxCTXSize: number = 22) {
     const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     const _ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
     _canvas.width = _canvas.height = calculateNewCanvasSize(maxCanvasSize);
@@ -276,13 +195,13 @@ function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouse
 
 async function loadDigitRecognizerModel(path: string) {
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    clearBtn.print('Wait');
+    eraseButton.write('Wait');
     model = await tf.loadLayersModel(path);
     writeLog("The model was loaded successfully!");
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
-    clearBtn.enable();
-    outSection.printDefaultMessage();
+    eraseButton.enable();
+    outputLabel.defaultMessage();
 }
 
 
@@ -294,8 +213,8 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
         '<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>' +
     '</svg>'); // TODO: I've definetelly to rewrite this in react!
 
-    clearBtn.disable();
-    outSection.print(threeDotsSVG);
+    eraseButton.disable();
+    outputLabel.write(threeDotsSVG);
 
     /* To resize the image, it can be used either `resizeBilinear` or `resizeNearestNeighbor` transforms. */
     const InPut = tf.browser.fromPixels(_canvas).resizeNearestNeighbor(inputShape)
@@ -305,8 +224,8 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
         if (modelWasLoaded === false || drawing === true)
             throw Error(modelWasLoaded ? 'Prediction canceled, model was not loaded yet!' : 'Drawing already, prediction canceled!');
         else if (InPut.sum().dataSync()[0] === 0) {
-            clearBtn.enable();
-            outSection.print("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
+            eraseButton.enable();
+            outputLabel.write("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>");
             throw Error('Canvas has no drawing, prediction canceled!');
         }
 
@@ -314,8 +233,8 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
             await (isFirstPrediction() ? sleep((Number((waitTime / 2).toFixed(0)))) : sleep(waitTime));
 
         if (checkHalt() === true) {
-            clearBtn.enable();
-            outSection.printDefaultMessage();
+            eraseButton.enable();
+            outputLabel.defaultMessage();
             throw Error('Halt Received, prediction was canceled!');
         }
     } catch (error) {
@@ -329,16 +248,12 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
     const prob: number = tf.max(output).dataSync()[0];
     const percentProb = Number((prob * 100).toFixed(2));
     tf.engine().endScope(); //Prevents high usage of gpu
-    outSection.print(
+    outputLabel.write(
         `<div id='output-text'>The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)<\div>`
     );
     
-    SectionController.setOpacity( // TODO: eliminate the opacity feature
-        'output-text', 1, `${percentProb}% certain.`
-    ); 
-    
     writeLog(`Prediction: ${prediction} ... Certainty: ${percentProb}%`, false);
-    clearBtn.enable();
+    eraseButton.enable();
     havePredictLastDraw = true;
 }
 
@@ -347,18 +262,16 @@ async function predictImage(canvas: HTMLCanvasElement = undefined, inputSize: nu
     const canvas = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     setCanvasEvents(canvas); resizePage(canvas);
     const ctx = canvas.getContext('2d');
-    clearBtn.setEvent('click', () => {
+    eraseButton.setEvent('click', () => {
         ctx.clearRect(0, 0, calculateNewCanvasSize(), calculateNewCanvasSize());
         if (modelWasLoaded === true)
-            outSection.printDefaultMessage();
-        SectionController.setOpacity('output-text', 1, '');
+            outputLabel.defaultMessage();
         haltPrediction = true;
     });
     window.addEventListener('resize', () => {
         resizePage(canvas);
         if (modelWasLoaded === true)
-            outSection.printDefaultMessage();
-        SectionController.setOpacity('output-text', 1, '');
+            outputLabel.defaultMessage();
     });
     loadDigitRecognizerModel('./data/compiled/model.json');
     console.log(`Logs ${SHOW_DEBUG_LOGS ? 'enabled' : 'disabled'}.`);
