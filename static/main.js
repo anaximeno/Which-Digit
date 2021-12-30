@@ -36,8 +36,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 export const __esModule = true;
-import { OutputLabel, Button, sleep, max } from "./common.js";
+import { Logger, OutputLabel, Button, sleep, max } from "./common.js";
 import { Canvas } from "./canvas.js";
+var logger = new Logger(true);
 var modelWasLoaded = false;
 var haltPrediction = false;
 var havePredictLastDraw = true;
@@ -188,31 +189,10 @@ function checkLastDrawPredicted() {
     }
     return false;
 }
-function writeLog(message, showTime, timeDiff) {
-    if (showTime === void 0) { showTime = true; }
-    if (timeDiff === void 0) { timeDiff = -1; }
-    var zeroPad = function (num) { return num < 10 ? '0' + num.toString() : num.toString(); };
-    if (!SHOW_DEBUG_LOGS)
-        return SHOW_DEBUG_LOGS;
-    var date = new Date();
-    var UTCHours = date.getUTCHours();
-    var hour = zeroPad(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff : 24 + timeDiff);
-    var minutes = zeroPad(date.getUTCMinutes());
-    var seconds = zeroPad(date.getUTCSeconds());
-    console.log(showTime ? hour + ":" + minutes + ":" + seconds + " - " + message : message);
-    return SHOW_DEBUG_LOGS;
-}
 function getDigitName(number) {
     return { 0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
         5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine'
     }[number];
-}
-function setCanvasEvents(canvas, sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
-    if (canvas === void 0) { canvas = undefined; }
-    if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
-    if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
-    var _canvas = canvas || document.getElementById('draw-canvas');
-    var ctx = _canvas.getContext('2d');
 }
 function loadDigitRecognizerModel(path) {
     return __awaiter(this, void 0, void 0, function () {
@@ -225,7 +205,7 @@ function loadDigitRecognizerModel(path) {
                     return [4, tf.loadLayersModel(path)];
                 case 1:
                     model = _a.sent();
-                    writeLog("The model was loaded successfully!");
+                    logger.writeLog("The model was loaded successfully!");
                     canvas.style.cursor = 'crosshair';
                     modelWasLoaded = true;
                     eraseButton.enable();
@@ -278,7 +258,7 @@ function predictImage(inputSize, padding, waitTime) {
                     return [3, 5];
                 case 4:
                     error_1 = _a.sent();
-                    writeLog(error_1);
+                    logger.writeLog(error_1);
                     return [2, false];
                 case 5:
                     tf.engine().startScope();
@@ -288,7 +268,7 @@ function predictImage(inputSize, padding, waitTime) {
                     percentProb = Number((prob * 100).toFixed(2));
                     tf.engine().endScope();
                     outputLabel.write("<div id='output-text'>The number drawn is <strong>" + prediction + "</strong> (<strong>" + getDigitName(prediction) + "</strong>)<div>");
-                    writeLog("Prediction: " + prediction + " ... Certainty: " + percentProb + "%", false);
+                    logger.writeLog("Prediction: " + prediction + " ... Certainty: " + percentProb + "%", false);
                     eraseButton.enable();
                     havePredictLastDraw = true;
                     return [2];
@@ -313,7 +293,7 @@ function predictImage(inputSize, padding, waitTime) {
             outputLabel.defaultMessage();
     });
     loadDigitRecognizerModel('./data/compiled/model.json');
-    console.log("Logs " + (SHOW_DEBUG_LOGS ? 'enabled' : 'disabled') + ".");
-    writeLog(welcomeMessage);
+    logger.writeLog("Logs " + (SHOW_DEBUG_LOGS ? 'enabled' : 'disabled') + ".", false, true);
+    logger.writeLog(welcomeMessage, false, true);
 })('Welcome to the Digit Recognition Web App!');
 //# sourceMappingURL=main.js.map

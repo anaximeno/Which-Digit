@@ -1,6 +1,13 @@
-import {OutputLabel, Button, sleep, max} from './common';
+import {
+    Logger,
+    OutputLabel,
+    Button,
+    sleep,
+    max
+} from './common';
 import {Canvas} from './canvas';
 
+const logger = new Logger(true); // ALERT: debug moe active
 
 let modelWasLoaded: boolean = false;
 let haltPrediction: boolean = false;
@@ -15,10 +22,7 @@ const SHOW_DEBUG_LOGS = false;
 
 const canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
 
-const initializaCanvasEvents = (
-    sleepTimeOnMouseOut: number = 1500,
-    sleepTimeOnMouseUp: number = 1350
-) => {
+const initializaCanvasEvents = (sleepTimeOnMouseOut: number = 1500,sleepTimeOnMouseUp: number = 1350) => {
     const _canvas = canvas.getCanvasElement();
     const _ctx = canvas.getCtxElement();
     
@@ -149,23 +153,6 @@ function checkLastDrawPredicted(): boolean {
 }
 
 
-function writeLog(message: string, showTime: boolean = true, timeDiff: number = -1): boolean {
-    const zeroPad = (num: number): string =>  num < 10 ? '0'+num.toString() : num.toString();
-
-    if (!SHOW_DEBUG_LOGS)
-        return SHOW_DEBUG_LOGS;
-
-    const date = new Date();
-    const UTCHours = date.getUTCHours();
-    const hour = zeroPad(UTCHours !== 0 || timeDiff >= 0 ? UTCHours + timeDiff :  24 + timeDiff);
-    const minutes = zeroPad(date.getUTCMinutes());
-    const seconds = zeroPad(date.getUTCSeconds());
-
-    console.log(showTime ? `${hour}:${minutes}:${seconds} - ` + message : message);
-    return SHOW_DEBUG_LOGS;
-}
-
-
 function getDigitName(number: number): string {
     return {0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
         5: 'Five', 6: 'Six',7: 'Seven', 8: 'Eight', 9: 'Nine'
@@ -173,19 +160,11 @@ function getDigitName(number: number): string {
 }
 
 
-function setCanvasEvents(canvas: HTMLCanvasElement = undefined, sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350): void {
-    const _canvas: HTMLCanvasElement = canvas || (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
-    const ctx: CanvasRenderingContext2D = _canvas.getContext('2d');
-
-    
-}
-
-
 async function loadDigitRecognizerModel(path: string) {
     const canvas: HTMLCanvasElement = (document.getElementById('draw-canvas') as unknown) as HTMLCanvasElement;
     eraseButton.write('Wait');
     model = await tf.loadLayersModel(path);
-    writeLog("The model was loaded successfully!");
+    logger.writeLog("The model was loaded successfully!");
     canvas.style.cursor = 'crosshair';
     modelWasLoaded = true;
     eraseButton.enable();
@@ -226,7 +205,7 @@ async function predictImage(inputSize: number = 36, padding: number = 5, waitTim
             throw Error('Halt Received, prediction was canceled!');
         }
     } catch (error) {
-        writeLog(error);
+        logger.writeLog(error);
         return false;
     }
 
@@ -240,7 +219,7 @@ async function predictImage(inputSize: number = 36, padding: number = 5, waitTim
         `<div id='output-text'>The number drawn is <strong>${prediction}</strong> (<strong>${getDigitName(prediction)}</strong>)<\div>`
     );
     
-    writeLog(`Prediction: ${prediction} ... Certainty: ${percentProb}%`, false);
+    logger.writeLog(`Prediction: ${prediction} ... Certainty: ${percentProb}%`, false);
     eraseButton.enable();
     havePredictLastDraw = true;
 }
@@ -265,7 +244,8 @@ async function predictImage(inputSize: number = 36, padding: number = 5, waitTim
         if (modelWasLoaded === true)
             outputLabel.defaultMessage();
     });
+
     loadDigitRecognizerModel('./data/compiled/model.json');
-    console.log(`Logs ${SHOW_DEBUG_LOGS ? 'enabled' : 'disabled'}.`);
-    writeLog(welcomeMessage);
+    logger.writeLog(`Logs ${SHOW_DEBUG_LOGS ? 'enabled' : 'disabled'}.`, false, true);
+    logger.writeLog(welcomeMessage, false, true);
 }) ('Welcome to the Digit Recognition Web App!');

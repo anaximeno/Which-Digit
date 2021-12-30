@@ -96,3 +96,38 @@ export class Button extends OutputLabel {
         this.button.addEventListener(event, listener);
     }
 }
+
+interface SingleLogI {
+    time: string;
+    message: string;
+}
+
+export class Logger {
+    private log: SingleLogI[] = [];
+
+    constructor(public debugMode: boolean) { }
+    
+    static getTime = (): string => {
+        const zeroPad = (n: number): string =>  
+                      n < 10 ? '0'+n.toString() : n.toString();
+
+        const date = new Date();
+        const hours = zeroPad(date.getHours()); /// TODO: test hours
+        const minutes = zeroPad(date.getMinutes());
+        const seconds = zeroPad(date.getSeconds());
+
+        return `${hours}:${minutes}:${seconds}`
+    }
+    
+    private saveLog = (message: string, time: string) => {
+        this.log.push({ time, message });
+    }
+
+    writeLog = (message: string, time: boolean = true, force?: boolean) => {
+        const prefix = time ? `${Logger.getTime()} - ` : '';
+        if (this.debugMode === true || force === true) {
+            console.log(`${prefix + message}`);
+        }
+        this.saveLog(message, Logger.getTime());
+    }   
+}

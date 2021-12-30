@@ -99,4 +99,35 @@ var Button = (function (_super) {
 }(OutputLabel));
 const _Button = Button;
 export { _Button as Button };
+var Logger = (function () {
+    function Logger(debugMode) {
+        var _this = this;
+        this.debugMode = debugMode;
+        this.log = [];
+        this.saveLog = function (message, time) {
+            _this.log.push({ time: time, message: message });
+        };
+        this.writeLog = function (message, time, force) {
+            if (time === void 0) { time = true; }
+            var prefix = time ? Logger.getTime() + " - " : '';
+            if (_this.debugMode === true || force === true) {
+                console.log("" + (prefix + message));
+            }
+            _this.saveLog(message, Logger.getTime());
+        };
+    }
+    Logger.getTime = function () {
+        var zeroPad = function (n) {
+            return n < 10 ? '0' + n.toString() : n.toString();
+        };
+        var date = new Date();
+        var hours = zeroPad(date.getHours());
+        var minutes = zeroPad(date.getMinutes());
+        var seconds = zeroPad(date.getSeconds());
+        return hours + ":" + minutes + ":" + seconds;
+    };
+    return Logger;
+}());
+const _Logger = Logger;
+export { _Logger as Logger };
 //# sourceMappingURL=common.js.map
