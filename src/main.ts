@@ -4,6 +4,7 @@ import { Logger, OutputLabel, Button} from './common';
 import { Model } from './model'
 import { App } from "./app";
 
+
 const outLabelDMSG_P1 = "<div id='output-text'>Draw any digit between <strong>";
 const outLabelDMSG_P2 = "0</strong> to <strong>9</strong><\div>";
 

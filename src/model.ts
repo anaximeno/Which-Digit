@@ -1,5 +1,6 @@
-import {Canvas} from './canvas';
-import {Button, OutputLabel, Logger, sleep} from './common';
+import { Button, OutputLabel, Logger, sleep } from './common';
+import { Canvas } from './canvas';
+
 
 interface SinglePredictionI {
     value: number;
@@ -16,6 +17,7 @@ const DigitNames = {
     6: 'Six',7: 'Seven',
     8: 'Eight', 9: 'Nine',
 };
+
 
 export class Model {
     private model: any;
@@ -68,7 +70,10 @@ export class Model {
         }
     }
 
-    predict = async (sleepTime: number = 150, returnDraw: boolean = false): Promise<SinglePredictionI> => {
+    predict = async (
+        sleepTime: number = 150,
+        returnDraw: boolean = false
+    ): Promise<SinglePredictionI> => {
         const _canvas = this.canvas.getCanvasElement();
         this.eraseButton.disable();
         this.outputLabel.write("<-<-< Predicting >->->");

@@ -1,9 +1,11 @@
 import { min , max, CtxPosI } from "./common"
 
+
 export interface SizeI {
     width: number;
     height: number;
 }
+
 
 // default export was not used on purpose
 export class Canvas {
