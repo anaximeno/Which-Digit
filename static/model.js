@@ -142,7 +142,7 @@ var Model = (function () {
                             probability = Number((prediction.certainty * 100).toFixed(2));
                             this.outputLabel.write("<div id='output-text'>The number drawn is <strong>" +
                                 (prediction.value + "</strong> (<strong>" + prediction.name + "</strong>)<div>"));
-                            this.logger.writeLog("Prediction: " + prediction + "  Certainty: " + probability + "%");
+                            this.logger.writeLog("Prediction: " + prediction.value + "  Certainty: " + probability + "%");
                             this.eraseButton.enable();
                             this.lastDrawPredicted = true;
                             this.predictions.push(prediction);
@@ -190,6 +190,7 @@ var Model = (function () {
             [padding, padding],
             [padding, padding]
         ];
+        this.predictions = [];
     }
     return Model;
 }());

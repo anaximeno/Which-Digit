@@ -48,6 +48,7 @@ export class Model {
             [padding, padding],
             [padding, padding]
         ];
+        this.predictions = [];
     }
 
     isLoaded = (): boolean => this.modelWasLoaded;
@@ -133,7 +134,7 @@ export class Model {
             `${prediction.value}</strong> (<strong>${prediction.name}</strong>)<\div>`
         );
     
-        this.logger.writeLog(`Prediction: ${prediction}  Certainty: ${probability}%`)
+        this.logger.writeLog(`Prediction: ${prediction.value}  Certainty: ${probability}%`)
         this.eraseButton.enable();
         this.lastDrawPredicted = true;
         this.predictions.push(prediction);
