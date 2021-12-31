@@ -78,12 +78,9 @@ export class App {
             this.canvas.drawing = true;
             this.model.lastDrawPredicted = false;
             this.model.deactivateHalt();
-            const clientRect = _canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            this.canvas.setLastCtxPosition({
-                x: touch.pageX - clientRect.x,
-                y: touch.pageY - clientRect.y
-            });
+            const {x: Ux, y: Uy, ...o} = _canvas.getBoundingClientRect();
+            const {pageX: Tx, pageY: Ty, ...a} = e.touches[0];
+            this.canvas.setLastCtxPosition({x: Tx - Ux, y: Ty - Uy});
         });
     
         this.canvas.setEvent('touchmove', (e: TouchEvent) => {
@@ -139,22 +136,22 @@ export class App {
             sleepTimeOnMouseUp,
             pageMarginIncrease
         } = this.appDefinitions;
-        this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
-        this.resizeTheEntirePage(pageMarginIncrease);
-        this.model.load();
         this.eraseButton.setEvent('click', () => {
             this.canvas.clear();
+            this.model.activateHalt();
             if (this.model.isLoaded() === true) {
                 this.outLabel.defaultMessage();
-            this.model.activateHalt();
             }
         });
         window.addEventListener('resize', () => {
-            this.resizeTheEntirePage();
+            this.resizeTheEntirePage(pageMarginIncrease);
             if (this.model.isLoaded() === true) {
-                this.outLabel.defaultMessage()
+                this.outLabel.defaultMessage();
             }
         });
+        this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
+        this.resizeTheEntirePage(pageMarginIncrease);
+        this.model.load();
         this.logger.writeLog('Running the Digit Recognition Web App!', false, false);
     }
 };

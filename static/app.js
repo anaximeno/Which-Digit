@@ -35,6 +35,17 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 export const __esModule = true;
 import { sleep, max } from "./common.js";
 ;
@@ -112,12 +123,9 @@ var App = (function () {
                 _this.canvas.drawing = true;
                 _this.model.lastDrawPredicted = false;
                 _this.model.deactivateHalt();
-                var clientRect = _canvas.getBoundingClientRect();
-                var touch = e.touches[0];
-                _this.canvas.setLastCtxPosition({
-                    x: touch.pageX - clientRect.x,
-                    y: touch.pageY - clientRect.y
-                });
+                var _a = _canvas.getBoundingClientRect(), Ux = _a.x, Uy = _a.y, o = __rest(_a, ["x", "y"]);
+                var _b = e.touches[0], Tx = _b.pageX, Ty = _b.pageY, a = __rest(_b, ["pageX", "pageY"]);
+                _this.canvas.setLastCtxPosition({ x: Tx - Ux, y: Ty - Uy });
             });
             _this.canvas.setEvent('touchmove', function (e) {
                 e.preventDefault();
@@ -169,22 +177,22 @@ var App = (function () {
                 _this.appDefinitions = definition;
             }
             var _a = _this.appDefinitions, sleepTimeOnMouseOut = _a.sleepTimeOnMouseOut, sleepTimeOnMouseUp = _a.sleepTimeOnMouseUp, pageMarginIncrease = _a.pageMarginIncrease;
-            _this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
-            _this.resizeTheEntirePage(pageMarginIncrease);
-            _this.model.load();
             _this.eraseButton.setEvent('click', function () {
                 _this.canvas.clear();
+                _this.model.activateHalt();
                 if (_this.model.isLoaded() === true) {
                     _this.outLabel.defaultMessage();
-                    _this.model.activateHalt();
                 }
             });
             window.addEventListener('resize', function () {
-                _this.resizeTheEntirePage();
+                _this.resizeTheEntirePage(pageMarginIncrease);
                 if (_this.model.isLoaded() === true) {
                     _this.outLabel.defaultMessage();
                 }
             });
+            _this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
+            _this.resizeTheEntirePage(pageMarginIncrease);
+            _this.model.load();
             _this.logger.writeLog('Running the Digit Recognition Web App!', false, false);
         };
         this.appDefinitions = {
