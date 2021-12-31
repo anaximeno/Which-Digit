@@ -76,17 +76,19 @@ export class Model {
     ): Promise<SinglePredictionI> => {
         const _canvas = this.canvas.getCanvasElement();
         this.eraseButton.disable();
-        this.outputLabel.write("<-<-< Predicting >->->");
-        
+        // REMIND: I changed the txt bellow from `Prediction` to `Analyzing` because I believed
+        // it was better for non technical persons to understand what is really happening.
+        this.outputLabel.write("<-<-< Analyzing >->->");
+
         const inputTensor = tf.browser.fromPixels(_canvas)
-            .resizeNearestNeighbor(this.inputShape)
+            .resizeBilinear(this.inputShape)
             .mean(2)
             .pad(this.paddingShape)
             .expandDims()
             .expandDims(3)
             .toFloat()
             .div(255.0);
-        
+
         try {
             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
                 throw Error(this.modelWasLoaded ?

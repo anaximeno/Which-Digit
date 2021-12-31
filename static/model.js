@@ -86,9 +86,9 @@ var Model = (function () {
                         case 0:
                             _canvas = this.canvas.getCanvasElement();
                             this.eraseButton.disable();
-                            this.outputLabel.write("<-<-< Predicting >->->");
+                            this.outputLabel.write("<-<-< Analyzing >->->");
                             inputTensor = tf.browser.fromPixels(_canvas)
-                                .resizeNearestNeighbor(this.inputShape)
+                                .resizeBilinear(this.inputShape)
                                 .mean(2)
                                 .pad(this.paddingShape)
                                 .expandDims()
