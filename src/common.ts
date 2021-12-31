@@ -85,12 +85,12 @@ export class Button extends OutputLabel {
 
     enable = () => {
         this.button.disabled = false;
-        this.write(this.defaultMsg);
+        this.defaultMessage();
     }
 
     disable = () => {
         this.button.disabled = true;
-        this.defaultMessage();
+        this.write(this.disableMsg);
     }
 
     setEvent = (event: string, listener: any) => {

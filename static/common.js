@@ -83,11 +83,11 @@ var Button = (function (_super) {
         _this.disableMsg = disableMsg;
         _this.enable = function () {
             _this.button.disabled = false;
-            _this.write(_this.defaultMsg);
+            _this.defaultMessage();
         };
         _this.disable = function () {
             _this.button.disabled = true;
-            _this.defaultMessage();
+            _this.write(_this.disableMsg);
         };
         _this.setEvent = function (event, listener) {
             _this.button.addEventListener(event, listener);
