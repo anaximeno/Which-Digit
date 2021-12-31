@@ -168,8 +168,9 @@ var App = (function () {
             if (definition) {
                 _this.appDefinitions = definition;
             }
-            _this.initializeCanvasEvents(_this.appDefinitions.sleepTimeOnMouseOut, _this.appDefinitions.sleepTimeOnMouseUp);
-            _this.resizeTheEntirePage(_this.appDefinitions.pageMarginIncrease);
+            var _a = _this.appDefinitions, sleepTimeOnMouseOut = _a.sleepTimeOnMouseOut, sleepTimeOnMouseUp = _a.sleepTimeOnMouseUp, pageMarginIncrease = _a.pageMarginIncrease;
+            _this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
+            _this.resizeTheEntirePage(pageMarginIncrease);
             _this.model.load();
             _this.eraseButton.setEvent('click', function () {
                 _this.canvas.clear();
