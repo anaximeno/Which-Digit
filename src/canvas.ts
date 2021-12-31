@@ -10,7 +10,7 @@ export interface SizeI {
 // default export was not used on purpose
 export class Canvas {
     protected readonly canvas: HTMLCanvasElement;
-    public readonly ctx: CanvasRenderingContext2D;
+    private readonly ctx: CanvasRenderingContext2D;
     private lastCtxPos: CtxPosI;
     public drawing: boolean;
 
@@ -19,7 +19,7 @@ export class Canvas {
         protected readonly canvasSize: SizeI,
         protected readonly ctxSize: number
     ) {
-        this.lastCtxPos = {x: 0, y: 0};
+        this.lastCtxPos = { x: 0, y: 0 };
         this.drawing = false;
         this.canvas = document.getElementById(selector) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d');
@@ -37,7 +37,7 @@ export class Canvas {
         this.lastCtxPos = pos;
     }
 
-    getLastCtxPosition = () => {
+    getLastCtxPosition = (): CtxPosI => {
         return this.lastCtxPos;
     }
 
@@ -45,7 +45,7 @@ export class Canvas {
         const {width, height} = this.canvasSize;
         const maxSize = max(width, height);
         const {innerWidth: innerW, outerWidth: outerW, ...o} = window;
-        const betterWidth: number = min(innerW, outerW) || innerW;
+        const betterWidth = min(innerW, outerW) || innerW;
         return betterWidth > (maxSize + paddingIncrement) ? 
             maxSize : (betterWidth - paddingIncrement);
     }
