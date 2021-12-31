@@ -9,7 +9,7 @@ For more information about the model used for inference, click on the [Model Car
 
 ## Main References:
 
-* *Michael A. Nielsen, "Neural Networks and Deep Learning", Determination Press, 2015* - [*neuralnetworksanddeeplearning.com*](https://neuralnetworksanddeeplearning.com/) (Web Version)
+* *Michael A. Nielsen, "Neural Networks and Deep Learning", Determination Press, 2015* - [*neuralnetworksanddeeplearning.com*](https://neuralnetworksanddeeplearning.com/)
 * *Juan De Dios Santos Rivera, "Practical TensorFlow JS Learning Development"*
 * *Karen Simonyan & Andrew Zisserman, VERY DEEP CONVOLUTIONAL NETWORKS FOR LARGE-SCALE IMAGE RECOGNITION, Visual Geometry Group, Department of Engineering Science, University of Oxford* - [VGG Paper](https://arxiv.org/pdf/1409.1556.pdf "Very Deep Convolutional Networks Paper") 
 * Learning Rate Reduction on Plateau - [Kaggle Notebook Link](https://www.kaggle.com/loveunk/kaggle-digit-recognizer-keras-cnn-100-accuracy?rvi=1&scriptVersionId=11106277&cellId=16)
