@@ -112,10 +112,10 @@ export class Logger {
     
     static getTime = (): string => {
         const zeroPad = (n: number): string =>  
-                      n < 10 ? '0'+n.toString() : n.toString();
+                      n < 10 ? '0' + n.toString() : n.toString();
 
         const date = new Date();
-        const hours = zeroPad(date.getHours()); /// TODO: test hours
+        const hours = zeroPad(date.getHours());
         const minutes = zeroPad(date.getMinutes());
         const seconds = zeroPad(date.getSeconds());
 
