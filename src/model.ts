@@ -64,18 +64,18 @@ export class Model {
             "ERROR: The model was not Loaded, try to reload the page."
         );
         if (this.modelWasLoaded === true) {
+            // Predict the empty canvas at least one time,
+            // because the first prediction is the slowest one.
+            this.makePrediction(this.getInputTensor());
             this.canvas.getCanvasElement().style.cursor = 'crosshair';
             this.eraseButton.enable();
             this.outputLabel.defaultMessage();
         }
     }
 
-    analyzeDrawing = async (sleepTime: number = 150, returnUserDrawing: boolean = false): Promise<MPI> => {
-        const _canvas = this.canvas.getCanvasElement();
-        this.eraseButton.disable();
-        this.outputLabel.write("<-<-< Analyzing >->->");
-
-        const inputTensor = tf.browser.fromPixels(_canvas)
+    private getInputTensor = (): any => {
+        return tf.browser
+            .fromPixels(this.canvas.getCanvasElement())
             .resizeBilinear(this.inputShape)
             .mean(2)
             .pad(this.paddingShape)
@@ -83,8 +83,14 @@ export class Model {
             .expandDims(3)
             .toFloat()
             .div(255.0);
+    }
 
-        
+    analyzeDrawing = async (sleepTime: number = 150, returnUserDrawing: boolean = false): Promise<MPI> => {
+        this.eraseButton.disable();
+        this.outputLabel.write("<-<-< Analyzing >->->");
+
+        const inputTensor = this.getInputTensor();
+
         if (this.modelWasLoaded === false || this.canvas.drawing === true) {
             this.activateHalt();
             this.logger.writeLog(this.modelWasLoaded ?

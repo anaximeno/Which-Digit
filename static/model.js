@@ -68,6 +68,7 @@ var Model = (function () {
                             "The model was loaded successfully!" :
                             "ERROR: The model was not Loaded, try to reload the page.");
                         if (this.modelWasLoaded === true) {
+                            this.makePrediction(this.getInputTensor());
                             this.canvas.getCanvasElement().style.cursor = 'crosshair';
                             this.eraseButton.enable();
                             this.outputLabel.defaultMessage();
@@ -76,25 +77,28 @@ var Model = (function () {
                 }
             });
         }); };
+        this.getInputTensor = function () {
+            return tf.browser
+                .fromPixels(_this.canvas.getCanvasElement())
+                .resizeBilinear(_this.inputShape)
+                .mean(2)
+                .pad(_this.paddingShape)
+                .expandDims()
+                .expandDims(3)
+                .toFloat()
+                .div(255.0);
+        };
         this.analyzeDrawing = function (sleepTime, returnUserDrawing) {
             if (sleepTime === void 0) { sleepTime = 150; }
             if (returnUserDrawing === void 0) { returnUserDrawing = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var _canvas, inputTensor, prediction;
+                var inputTensor, prediction;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            _canvas = this.canvas.getCanvasElement();
                             this.eraseButton.disable();
                             this.outputLabel.write("<-<-< Analyzing >->->");
-                            inputTensor = tf.browser.fromPixels(_canvas)
-                                .resizeBilinear(this.inputShape)
-                                .mean(2)
-                                .pad(this.paddingShape)
-                                .expandDims()
-                                .expandDims(3)
-                                .toFloat()
-                                .div(255.0);
+                            inputTensor = this.getInputTensor();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
                                 this.activateHalt();
                                 this.logger.writeLog(this.modelWasLoaded ?
