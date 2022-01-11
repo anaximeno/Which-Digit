@@ -72,19 +72,23 @@ var App = (function () {
                 _this.canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
             });
             _this.canvas.setEvent('mouseout', function (e) { return __awaiter(_this, void 0, void 0, function () {
-                var wasDrawing;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                var wasDrawing, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
                             e.preventDefault();
                             wasDrawing = this.canvas.drawing;
                             this.canvas.drawing = false;
-                            return [4, sleep(sleepTimeOnMouseOut)];
+                            return [4, (0, sleep)(sleepTimeOnMouseOut)];
                         case 1:
-                            _a.sent();
-                            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())
-                                this.model.predict(150, false);
-                            return [2];
+                            _b.sent();
+                            if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
+                            _a = this.showResults;
+                            return [4, this.model.analyzeDrawing(150, false)];
+                        case 2:
+                            _a.apply(this, [_b.sent()]);
+                            _b.label = 3;
+                        case 3: return [2];
                     }
                 });
             }); });
@@ -100,19 +104,23 @@ var App = (function () {
                 _this.canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
             });
             _this.canvas.setEvent('mouseup', function (e) { return __awaiter(_this, void 0, void 0, function () {
-                var wasDrawing;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                var wasDrawing, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
                             e.preventDefault();
                             wasDrawing = this.canvas.drawing;
                             this.canvas.drawing = false;
-                            return [4, sleep(sleepTimeOnMouseUp)];
+                            return [4, (0, sleep)(sleepTimeOnMouseUp)];
                         case 1:
-                            _a.sent();
-                            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())
-                                this.model.predict(150, false);
-                            return [2];
+                            _b.sent();
+                            if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
+                            _a = this.showResults;
+                            return [4, this.model.analyzeDrawing(150, false)];
+                        case 2:
+                            _a.apply(this, [_b.sent()]);
+                            _b.label = 3;
+                        case 3: return [2];
                     }
                 });
             }); });
@@ -143,22 +151,35 @@ var App = (function () {
                 _this.canvas.setLastCtxPosition({ x: x, y: y });
             });
             _this.canvas.setEvent('touchend', function (e) { return __awaiter(_this, void 0, void 0, function () {
-                var wasDrawing;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                var wasDrawing, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
                             e.preventDefault();
                             wasDrawing = this.canvas.drawing;
                             this.canvas.drawing = false;
-                            return [4, sleep(sleepTimeOnMouseUp)];
+                            return [4, (0, sleep)(sleepTimeOnMouseUp)];
                         case 1:
-                            _a.sent();
-                            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())
-                                this.model.predict(150, false);
-                            return [2];
+                            _b.sent();
+                            if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
+                            _a = this.showResults;
+                            return [4, this.model.analyzeDrawing(150, false)];
+                        case 2:
+                            _a.apply(this, [_b.sent()]);
+                            _b.label = 3;
+                        case 3: return [2];
                     }
                 });
             }); });
+        };
+        this.showResults = function (prediction) {
+            var name = prediction.name, value = prediction.value, certainty = prediction.certainty, _ = __rest(prediction, ["name", "value", "certainty"]);
+            var outMessageP01 = "<div id='output-text'>The number drawn is <strong>";
+            var outMessageP02 = "".concat(value, "</strong> (<strong>").concat(name, "</strong>)<div>");
+            _this.outLabel.write(outMessageP01 + outMessageP02);
+            var prob = Number((certainty * 100).toFixed(2));
+            var logMessage = "Prediction: ".concat(value, "  (certainty = ").concat(prob, "%)");
+            _this.logger.writeLog(logMessage, true, false);
         };
         this.resizeTheEntirePage = function (pageMarginIncrease) {
             if (pageMarginIncrease === void 0) { pageMarginIncrease = 300; }
@@ -167,7 +188,7 @@ var App = (function () {
             var pipe = document.getElementById('pipeline');
             var main = document.getElementsByTagName('html')[0];
             var canvasSize = _this.canvas.canvasBetterSize();
-            main.style.height = max(innerH, pageMarginIncrease + canvasSize).toString() + "px";
+            main.style.height = (0, max)(innerH, pageMarginIncrease + canvasSize).toString() + "px";
             output.style.width = canvasSize.toString() + "px";
             pipe.style.width = output.style.width;
             _this.canvas.resize();
