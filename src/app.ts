@@ -152,24 +152,30 @@ export class App {
         if (definition) {
             this.appDefinitions = definition;
         }
+
         const {
             sleepTimeOnMouseOut,
             sleepTimeOnMouseUp,
             pageMarginIncrease
         } = this.appDefinitions;
+
         this.eraseButton.setEvent('click', () => {
             this.canvas.clear();
-            this.model.activateHalt();
+            this.model.activateHalt(() => {
+                this.logger.writeLog("Clear button was clicked, prediction canceled!");
+            });
             if (this.model.isLoaded() === true) {
                 this.outLabel.defaultMessage();
             }
         });
+
         window.addEventListener('resize', () => {
             this.resizeTheEntirePage(pageMarginIncrease);
             if (this.model.isLoaded() === true) {
                 this.outLabel.defaultMessage();
             }
         });
+
         this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
         this.resizeTheEntirePage(pageMarginIncrease);
         this.model.load();

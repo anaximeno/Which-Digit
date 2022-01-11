@@ -93,6 +93,7 @@ var Model = (function () {
             if (returnUserDrawing === void 0) { returnUserDrawing = false; }
             return __awaiter(_this, void 0, void 0, function () {
                 var inputTensor, prediction;
+                var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -100,35 +101,37 @@ var Model = (function () {
                             this.outputLabel.write("<<< Analyzing your Drawings >>>");
                             inputTensor = this.getInputTensor();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
-                                this.activateHalt();
-                                this.logger.writeLog(this.modelWasLoaded ?
-                                    'Prediction canceled, model was not loaded yet!' :
-                                    'Drawing already, prediction canceled!');
+                                this.activateHalt(function () {
+                                    _this.eraseButton.enable();
+                                    _this.outputLabel.defaultMessage();
+                                    _this.logger.writeLog(_this.modelWasLoaded ?
+                                        'Prediction canceled, model was not loaded yet!' :
+                                        'Drawing already, prediction canceled!');
+                                });
                             }
                             else if (inputTensor.sum().dataSync()[0] === 0) {
-                                this.activateHalt();
-                                this.eraseButton.enable();
-                                this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
-                                    "  Click and Hold to draw.<\div>");
-                                this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+                                this.activateHalt(function () {
+                                    _this.eraseButton.enable();
+                                    _this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
+                                        "  Click and Hold to draw.<\div>");
+                                    _this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+                                });
                             }
                             return [4, (0, sleep)(this.checkLastDrawPredicted() === false ? sleepTime : 0)];
                         case 1:
                             _a.sent();
-                            if (this.checkHalt() === true) {
-                                this.eraseButton.enable();
-                                if (inputTensor.sum().dataSync()[0] !== 0) {
-                                    this.outputLabel.defaultMessage();
-                                }
-                                this.logger.writeLog('Halt Received, prediction was canceled!');
+                            if (this.checkHalt()) {
                                 return [2];
                             }
-                            prediction = this.makePrediction(inputTensor, returnUserDrawing);
-                            this.outputLabel.write("Finished Analysis.");
-                            this.eraseButton.enable();
-                            this.lastDrawPredicted = true;
-                            this.predictions.push(prediction);
-                            return [2, prediction];
+                            else {
+                                prediction = this.makePrediction(inputTensor, returnUserDrawing);
+                                this.outputLabel.write("Finished Analysis.");
+                                this.eraseButton.enable();
+                                this.lastDrawPredicted = true;
+                                this.predictions.push(prediction);
+                                return [2, prediction];
+                            }
+                            return [2];
                     }
                 });
             });
@@ -150,14 +153,21 @@ var Model = (function () {
             };
             return prediction;
         };
-        this.activateHalt = function () {
+        this.activateHalt = function (haltEvent) {
             _this.halt = true;
+            if (haltEvent) {
+                _this.haltEvent = haltEvent;
+            }
         };
         this.deactivateHalt = function () {
             _this.halt = false;
+            _this.haltEvent = undefined;
         };
         this.checkHalt = function () {
             if (_this.halt === true) {
+                if (_this.haltEvent) {
+                    _this.haltEvent();
+                }
                 _this.deactivateHalt();
                 return true;
             }

@@ -25,8 +25,9 @@ export class Model {
     private readonly inputShape: number[];
     private readonly paddingShape: number[][];
     private modelWasLoaded: boolean;
-    protected halt: boolean;
     public lastDrawPredicted: boolean;
+    private halt: boolean;
+    private haltEvent?: Function;
 
     constructor(
         private readonly path: string,
@@ -89,40 +90,38 @@ export class Model {
         const inputTensor = this.getInputTensor();
 
         if (this.modelWasLoaded === false || this.canvas.drawing === true) {
-            this.activateHalt();
-            this.logger.writeLog(this.modelWasLoaded ?
-                'Prediction canceled, model was not loaded yet!' : 
-                'Drawing already, prediction canceled!'
-            );
+            this.activateHalt(() => {
+                this.eraseButton.enable();
+                this.outputLabel.defaultMessage();
+                this.logger.writeLog(this.modelWasLoaded ?
+                    'Prediction canceled, model was not loaded yet!' : 
+                    'Drawing already, prediction canceled!'
+                );
+            });
         } else if (inputTensor.sum().dataSync()[0] === 0) {
-            this.activateHalt();
-            this.eraseButton.enable();
-            this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:"+
-                "  Click and Hold to draw.<\div>"
-            );
-            this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+            this.activateHalt(() => {
+                this.eraseButton.enable();
+                this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:"+
+                    "  Click and Hold to draw.<\div>"
+                );
+                this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+            });
         }
 
         await sleep(this.checkLastDrawPredicted() === false ? sleepTime : 0);
-    
-        if (this.checkHalt() === true) {
-            this.eraseButton.enable();
-            // TODO: improve this!
-            if (inputTensor.sum().dataSync()[0] !== 0) {
-                this.outputLabel.defaultMessage();
-            }
-            this.logger.writeLog('Halt Received, prediction was canceled!');
+
+        if (this.checkHalt()) {
             return ;
+        } else {
+            const prediction = this.makePrediction(inputTensor, returnUserDrawing);
+    
+            this.outputLabel.write("Finished Analysis.");
+            this.eraseButton.enable();
+            this.lastDrawPredicted = true;
+            this.predictions.push(prediction);
+    
+            return prediction;
         }
-
-        const prediction = this.makePrediction(inputTensor, returnUserDrawing);
-
-        this.outputLabel.write("Finished Analysis.");
-        this.eraseButton.enable();
-        this.lastDrawPredicted = true;
-        this.predictions.push(prediction);
-
-        return prediction;
     }
 
     makePrediction = (inputTensor: any, returnUserDrawing: boolean = false): MPI => {
@@ -145,16 +144,23 @@ export class Model {
         return prediction;
     }
 
-    activateHalt = (): void => {
+    activateHalt = (haltEvent?: Function): void => {
         this.halt = true;
+        if (haltEvent) {
+            this.haltEvent = haltEvent;
+        }
     }
 
     deactivateHalt = () => {
         this.halt = false;
+        this.haltEvent = undefined;
     }
 
     checkHalt = (): boolean => {
         if (this.halt === true) {
+            if (this.haltEvent) {
+                this.haltEvent();
+            }
             this.deactivateHalt();
             return true;
         }

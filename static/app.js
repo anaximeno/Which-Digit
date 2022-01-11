@@ -205,7 +205,9 @@ var App = (function () {
             var _a = _this.appDefinitions, sleepTimeOnMouseOut = _a.sleepTimeOnMouseOut, sleepTimeOnMouseUp = _a.sleepTimeOnMouseUp, pageMarginIncrease = _a.pageMarginIncrease;
             _this.eraseButton.setEvent('click', function () {
                 _this.canvas.clear();
-                _this.model.activateHalt();
+                _this.model.activateHalt(function () {
+                    _this.logger.writeLog("Clear button was clicked, prediction canceled!");
+                });
                 if (_this.model.isLoaded() === true) {
                     _this.outLabel.defaultMessage();
                 }
