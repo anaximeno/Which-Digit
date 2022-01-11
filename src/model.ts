@@ -26,9 +26,7 @@ export class Model {
     private readonly paddingShape: number[][];
     private modelWasLoaded: boolean;
     protected halt: boolean;
-    protected isFirstPrediction: boolean;
     public lastDrawPredicted: boolean;
-    
 
     constructor(
         private readonly path: string,
@@ -39,7 +37,6 @@ export class Model {
     ) {
         this.modelWasLoaded = false;
         this.halt = false;
-        this.isFirstPrediction = true;
         this.lastDrawPredicted = true;
         const padding = 2;
         // TODO: try to get it automatically from the config file
@@ -106,12 +103,7 @@ export class Model {
             this.logger.writeLog('Canvas has no drawing, prediction canceled!');
         }
 
-        if (this.checkLastDrawPredicted() === false) {
-            await sleep(this.checkFirstPrediction() ? 
-                Number((sleepTime / Math.PI).toFixed(0)) : 
-                sleepTime
-            );
-        }
+        await sleep(this.checkLastDrawPredicted() === false ? sleepTime : 0);
     
         if (this.checkHalt() === true) {
             this.eraseButton.enable();
@@ -125,7 +117,7 @@ export class Model {
 
         const prediction = this.makePrediction(inputTensor, returnUserDrawing);
 
-        this.outputLabel.write("Finished Analysis.")
+        this.outputLabel.write("Finished Analysis.");
         this.eraseButton.enable();
         this.lastDrawPredicted = true;
         this.predictions.push(prediction);
@@ -164,15 +156,6 @@ export class Model {
     checkHalt = (): boolean => {
         if (this.halt === true) {
             this.deactivateHalt();
-            return true;
-        }
-        return false;
-    }
-
-    /** @summary returns if this is the first time the model is predicting */
-    checkFirstPrediction = (): boolean => {
-        if (this.isFirstPrediction === true) {
-            this.isFirstPrediction = false;
             return true;
         }
         return false;

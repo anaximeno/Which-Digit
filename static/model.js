@@ -112,14 +112,9 @@ var Model = (function () {
                                     "Click and Hold to draw.<\div>");
                                 this.logger.writeLog('Canvas has no drawing, prediction canceled!');
                             }
-                            if (!(this.checkLastDrawPredicted() === false)) return [3, 2];
-                            return [4, (0, sleep)(this.checkFirstPrediction() ?
-                                    Number((sleepTime / Math.PI).toFixed(0)) :
-                                    sleepTime)];
+                            return [4, (0, sleep)(this.checkLastDrawPredicted() === false ? sleepTime : 0)];
                         case 1:
                             _a.sent();
-                            _a.label = 2;
-                        case 2:
                             if (this.checkHalt() === true) {
                                 this.eraseButton.enable();
                                 if (inputTensor.sum().dataSync()[0] !== 0) {
@@ -168,13 +163,6 @@ var Model = (function () {
             }
             return false;
         };
-        this.checkFirstPrediction = function () {
-            if (_this.isFirstPrediction === true) {
-                _this.isFirstPrediction = false;
-                return true;
-            }
-            return false;
-        };
         this.checkLastDrawPredicted = function () {
             if (_this.lastDrawPredicted === true) {
                 _this.lastDrawPredicted = false;
@@ -184,7 +172,6 @@ var Model = (function () {
         };
         this.modelWasLoaded = false;
         this.halt = false;
-        this.isFirstPrediction = true;
         this.lastDrawPredicted = true;
         var padding = 2;
         var inputSize = 36;
