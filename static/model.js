@@ -62,12 +62,13 @@ var Model = (function () {
                         _a = this;
                         return [4, tf.loadLayersModel(this.path)];
                     case 1:
-                        _a.model = _b.sent();
-                        this.modelWasLoaded = this.model !== undefined;
+                        _a._model = _b.sent();
+                        this.modelWasLoaded = this._model !== undefined;
                         this.logger.writeLog(this.modelWasLoaded ?
                             "The model was loaded successfully!" :
                             "ERROR: The model was not Loaded, try to reload the page.");
                         if (this.modelWasLoaded === true) {
+                            this.makePrediction(this.getInputTensor());
                             this.canvas.getCanvasElement().style.cursor = 'crosshair';
                             this.eraseButton.enable();
                             this.outputLabel.defaultMessage();
@@ -76,73 +77,59 @@ var Model = (function () {
                 }
             });
         }); };
-        this.predict = function (sleepTime, returnDraw) {
+        this.getInputTensor = function () {
+            return tf.browser
+                .fromPixels(_this.canvas.getCanvasElement())
+                .resizeBilinear(_this.inputShape)
+                .mean(2)
+                .pad(_this.paddingShape)
+                .expandDims()
+                .expandDims(3)
+                .toFloat()
+                .div(255.0);
+        };
+        this.analyzeDrawing = function (sleepTime, returnUserDrawing) {
             if (sleepTime === void 0) { sleepTime = 150; }
-            if (returnDraw === void 0) { returnDraw = false; }
+            if (returnUserDrawing === void 0) { returnUserDrawing = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var _canvas, inputTensor, error_1, out, value, prediction, probability;
+                var inputTensor, prediction;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            _canvas = this.canvas.getCanvasElement();
                             this.eraseButton.disable();
                             this.outputLabel.write("<-<-< Analyzing >->->");
-                            inputTensor = tf.browser.fromPixels(_canvas)
-                                .resizeBilinear(this.inputShape)
-                                .mean(2)
-                                .pad(this.paddingShape)
-                                .expandDims()
-                                .expandDims(3)
-                                .toFloat()
-                                .div(255.0);
-                            _a.label = 1;
-                        case 1:
-                            _a.trys.push([1, 4, , 5]);
+                            inputTensor = this.getInputTensor();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
-                                throw Error(this.modelWasLoaded ?
+                                this.activateHalt();
+                                this.logger.writeLog(this.modelWasLoaded ?
                                     'Prediction canceled, model was not loaded yet!' :
                                     'Drawing already, prediction canceled!');
                             }
                             else if (inputTensor.sum().dataSync()[0] === 0) {
+                                this.activateHalt();
                                 this.eraseButton.enable();
                                 this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
                                     "Click and Hold to draw.<\div>");
-                                throw Error('Canvas has no drawing, prediction canceled!');
+                                this.logger.writeLog('Canvas has no drawing, prediction canceled!');
                             }
-                            if (!(this.checkLastDrawPredicted() === false)) return [3, 3];
-                            return [4, sleep(this.checkFirstPrediction() ?
-                                    Number((sleepTime / Math.PI).toFixed(0)) : sleepTime)];
-                        case 2:
+                            if (!(this.checkLastDrawPredicted() === false)) return [3, 2];
+                            return [4, (0, sleep)(this.checkFirstPrediction() ?
+                                    Number((sleepTime / Math.PI).toFixed(0)) :
+                                    sleepTime)];
+                        case 1:
                             _a.sent();
-                            _a.label = 3;
-                        case 3:
+                            _a.label = 2;
+                        case 2:
                             if (this.checkHalt() === true) {
                                 this.eraseButton.enable();
-                                this.outputLabel.defaultMessage();
-                                throw Error('Halt Received, prediction was canceled!');
+                                if (inputTensor.sum().dataSync()[0] !== 0) {
+                                    this.outputLabel.defaultMessage();
+                                }
+                                this.logger.writeLog('Halt Received, prediction was canceled!');
+                                return [2];
                             }
-                            return [3, 5];
-                        case 4:
-                            error_1 = _a.sent();
-                            this.logger.writeLog(error_1);
-                            return [2];
-                        case 5:
-                            tf.engine().startScope();
-                            out = this.model.predict(inputTensor).dataSync();
-                            value = tf.argMax(out).dataSync();
-                            prediction = {
-                                name: DigitNames[value],
-                                certainty: tf.max(out).dataSync()[0],
-                                value: value
-                            };
-                            if (returnDraw === true) {
-                                prediction.draw = inputTensor.dataSync();
-                            }
-                            tf.engine().endScope();
-                            probability = Number((prediction.certainty * 100).toFixed(2));
-                            this.outputLabel.write("<div id='output-text'>The number drawn is <strong>" +
-                                (prediction.value + "</strong> (<strong>" + prediction.name + "</strong>)<div>"));
-                            this.logger.writeLog("Prediction: " + prediction.value + "  Certainty: " + probability + "%");
+                            prediction = this.makePrediction(inputTensor, returnUserDrawing);
+                            this.outputLabel.write("Finished Analysis.");
                             this.eraseButton.enable();
                             this.lastDrawPredicted = true;
                             this.predictions.push(prediction);
@@ -150,6 +137,23 @@ var Model = (function () {
                     }
                 });
             });
+        };
+        this.makePrediction = function (inputTensor, returnUserDrawing) {
+            if (returnUserDrawing === void 0) { returnUserDrawing = false; }
+            tf.engine().startScope();
+            var outputTensor = _this._model.predict(inputTensor).dataSync();
+            var predictedValue = tf.argMax(outputTensor).dataSync();
+            var predictionValueName = DigitNames[predictedValue];
+            var predictionCertainty = tf.max(outputTensor).dataSync();
+            tf.engine().endScope();
+            var prediction = {
+                name: predictionValueName,
+                value: predictedValue,
+                certainty: predictionCertainty,
+                userDrawing: returnUserDrawing ?
+                    inputTensor : undefined
+            };
+            return prediction;
         };
         this.activateHalt = function () {
             _this.halt = true;

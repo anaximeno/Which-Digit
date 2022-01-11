@@ -1,6 +1,6 @@
 import { Canvas } from './canvas';
 import { Logger, OutputLabel, Button, sleep, max } from './common';
-import { Model } from './model'
+import { Model, MPI } from './model'
 
 
 export interface AppDefinitionsI {
@@ -46,8 +46,9 @@ export class App {
             const wasDrawing = this.canvas.drawing;
             this.canvas.drawing = false;
             await sleep(sleepTimeOnMouseOut);
-            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())
-                this.model.predict(150, false);
+            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
+                this.showResults(await this.model.analyzeDrawing(150, false));
+            }
         });
         
         this.canvas.setEvent('mousemove', (e: MouseEvent) => {
@@ -67,10 +68,11 @@ export class App {
             const wasDrawing = this.canvas.drawing;
             this.canvas.drawing = false;
             await sleep(sleepTimeOnMouseUp);
-            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())
-                this.model.predict(150, false);
+            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
+                this.showResults(await this.model.analyzeDrawing(150, false));
+            }
         });
-        
+
         this.canvas.setEvent('touchstart', (e: TouchEvent) => {
             e.preventDefault();
             if (this.model.isLoaded() === false)
@@ -104,9 +106,27 @@ export class App {
             const wasDrawing = this.canvas.drawing;
             this.canvas.drawing = false;
             await sleep(sleepTimeOnMouseUp);
-            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())
-                this.model.predict(150, false);
+            if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
+                this.showResults(await this.model.analyzeDrawing(150, false));
+            }
         });
+    }
+
+    // TODO: analyse to when there are no prediction returned
+    private showResults = (prediction?: MPI) => {
+        if (prediction !== undefined) {
+            let {name, value, certainty, ..._} = prediction; 
+        
+            const outMessageP01 = "<div id='output-text'>The number drawn is <strong>";
+            const outMessageP02 = `${value}</strong> (<strong>${name}</strong>)<\div>`;
+            this.outLabel.write(outMessageP01 + outMessageP02);
+
+            const prob = Number((certainty * 100).toFixed(2));
+            const logMessage = `Prediction: ${value}  (certainty = ${prob}%)`;
+            this.logger.writeLog(logMessage, true, false);
+        } else {
+            this.logger.writeLog('App.showResults failed: no prediction to show!');
+        }
     }
 
     protected resizeTheEntirePage = (pageMarginIncrease: number = 300) => {
@@ -115,6 +135,7 @@ export class App {
         const pipe = document.getElementById('pipeline');
         const main = document.getElementsByTagName('html')[0];
     
+        // TODO: maybe change method name to canvasIdealSize
         const canvasSize = this.canvas.canvasBetterSize();
     
         main.style.height = max(
