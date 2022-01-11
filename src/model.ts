@@ -1,4 +1,6 @@
-import { Button, OutputLabel, Logger, sleep } from './common';
+import { Button } from './common';
+import { OutputLabel } from './common';
+import { Logger, sleep } from './common';
 import { Canvas } from './canvas';
 
 
@@ -27,7 +29,7 @@ export class Model {
     private modelWasLoaded: boolean;
     public lastDrawPredicted: boolean;
     private halt: boolean;
-    private haltEvent?: Function;
+    private postHaltProcedure?: Function;
 
     constructor(
         private readonly path: string,
@@ -36,11 +38,11 @@ export class Model {
         private readonly outputLabel: OutputLabel,
         private readonly logger: Logger
     ) {
+        this.predictions = [];
         this.modelWasLoaded = false;
         this.halt = false;
         this.lastDrawPredicted = true;
         const padding = 2;
-        // TODO: try to get it automatically from the config file
         const inputSize = 36; 
         const shapeSize = inputSize - 2 * padding;
         this.inputShape = [shapeSize, shapeSize];
@@ -48,7 +50,6 @@ export class Model {
             [padding, padding],
             [padding, padding]
         ];
-        this.predictions = [];
     }
 
     isLoaded = (): boolean => this.modelWasLoaded;
@@ -83,7 +84,7 @@ export class Model {
             .div(255.0);
     }
 
-    analyzeDrawing = async (sleepTime: number = 150, returnUserDrawing: boolean = false): Promise<MPI> => {
+    analyzeDrawing = async (wait: number = 150, returnDrawing: boolean = false, save: boolean = false): Promise<MPI> => {
         this.eraseButton.disable();
         this.outputLabel.write("<<< Analyzing your Drawings >>>");
 
@@ -108,23 +109,21 @@ export class Model {
             });
         }
 
-        await sleep(this.checkLastDrawPredicted() === false ? sleepTime : 0);
+        await sleep(this.checkLastDrawPredicted() === false ? wait : 0);
 
         if (this.checkHalt()) {
             return ;
         } else {
-            const prediction = this.makePrediction(inputTensor, returnUserDrawing);
-    
-            this.outputLabel.write("Finished Analysis.");
-            this.eraseButton.enable();
             this.lastDrawPredicted = true;
-            this.predictions.push(prediction);
-    
+            const prediction = this.makePrediction(inputTensor, returnDrawing);
+            if (save === true) { this.predictions.push(prediction); }
+            this.outputLabel.write("Analysis finished.");
+            this.eraseButton.enable();
             return prediction;
         }
     }
 
-    makePrediction = (inputTensor: any, returnUserDrawing: boolean = false): MPI => {
+    private makePrediction = <T>(inputTensor: T, returnDrawing: boolean = false): MPI => {
         // This prevents high usage of GPU
         tf.engine().startScope();
         const outputTensor = this._model.predict(inputTensor).dataSync();
@@ -137,41 +136,46 @@ export class Model {
             name: predictionValueName,
             value: predictedValue,
             certainty: predictionCertainty,
-            userDrawing: returnUserDrawing ?
+            userDrawing: returnDrawing ?
                         inputTensor :undefined,
         }
 
         return prediction;
     }
 
-    activateHalt = (haltEvent?: Function): void => {
+    activateHalt = (postHaltProcedure?: Function): void => {
         this.halt = true;
-        if (haltEvent) {
-            this.haltEvent = haltEvent;
+        if (postHaltProcedure !== undefined) {
+            this.postHaltProcedure = postHaltProcedure;
         }
     }
 
     deactivateHalt = () => {
         this.halt = false;
-        this.haltEvent = undefined;
+        this.postHaltProcedure = undefined;
     }
 
     checkHalt = (): boolean => {
-        if (this.halt === true) {
-            if (this.haltEvent) {
-                this.haltEvent();
+        const halt = this.halt;
+
+        if (halt === true) {
+            if (this.postHaltProcedure !== undefined) {
+                this.postHaltProcedure();
             }
+
             this.deactivateHalt();
-            return true;
         }
-        return false;
+
+        return halt;
     }
-    
+
     checkLastDrawPredicted = (): boolean => {
-        if (this.lastDrawPredicted === true) {
+        const lastDrawPredicted = this.lastDrawPredicted;
+
+        if (lastDrawPredicted === true) {
             this.lastDrawPredicted = false;
-            return true;
         }
-        return false;
+
+        return lastDrawPredicted;
     }
 };
