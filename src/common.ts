@@ -103,6 +103,9 @@ interface LogInterface {
     message: string;
 }
 
+// TODO: maybe add a section to the logger
+// which can be used to determine which
+// section the log is from.
 export class Logger {
     static logs: LogInterface[] = [];
 

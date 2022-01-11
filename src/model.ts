@@ -58,9 +58,9 @@ export class Model {
         this.eraseButton.disable();
         this._model = await tf.loadLayersModel(this.path);
         this.modelWasLoaded = this._model !== undefined;
-        this.logger.writeLog(this.modelWasLoaded ?
+        this.logger.writeLog('Model.load: ' + (this.modelWasLoaded ?
             "The model was loaded successfully!" :
-            "ERROR: The model was not Loaded, try to reload the page."
+            "Error: The model was not loaded, try to reload the page.")
         );
         if (this.modelWasLoaded === true) {
             // Predict the empty canvas at least one time,
@@ -85,8 +85,8 @@ export class Model {
     }
 
     analyzeDrawing = async (wait: number = 150, returnDrawing: boolean = false, save: boolean = false): Promise<MPI> => {
-        this.eraseButton.disable();
         this.outputLabel.write("<<< Analyzing your Drawings >>>");
+        this.eraseButton.disable();
 
         const inputTensor = this.getInputTensor();
 
@@ -94,9 +94,9 @@ export class Model {
             this.activateHalt(() => {
                 this.eraseButton.enable();
                 this.outputLabel.defaultMessage();
-                this.logger.writeLog(this.modelWasLoaded ?
-                    'Prediction canceled, model was not loaded yet!' : 
-                    'Drawing already, prediction canceled!'
+                this.logger.writeLog('Model.analyzeDrawing: ' + (this.modelWasLoaded ?
+                    'model was not loaded yet, prediction canceled!' : 
+                    'user is drawing, prediction canceled!')
                 );
             });
         } else if (inputTensor.sum().dataSync()[0] === 0) {
@@ -105,15 +105,14 @@ export class Model {
                 this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:"+
                     "  Click and Hold to draw.<\div>"
                 );
-                this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+                this.logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
             });
         }
-
-        await sleep(this.checkLastDrawPredicted() === false ? wait : 0);
 
         if (this.checkHalt()) {
             return ;
         } else {
+            await sleep(this.checkLastDrawPredicted() === false ? wait : 0);
             this.lastDrawPredicted = true;
             const prediction = this.makePrediction(inputTensor, returnDrawing);
             if (save === true) { this.predictions.push(prediction); }

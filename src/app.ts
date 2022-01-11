@@ -125,7 +125,7 @@ export class App {
             const logMessage = `Prediction: ${value}  (certainty = ${prob}%)`;
             this.logger.writeLog(logMessage, true, false);
         } else {
-            this.logger.writeLog('App.showResults failed: no prediction to show!');
+            this.logger.writeLog('App.showResults: no predictions to show.');
         }
     }
 
@@ -162,7 +162,7 @@ export class App {
         this.eraseButton.setEvent('click', () => {
             this.canvas.clear();
             this.model.activateHalt(() => {
-                this.logger.writeLog("Clear button was clicked, prediction canceled!");
+                this.logger.writeLog("App: clear button clicked, canceled prediction!");
             });
             if (this.model.isLoaded() === true) {
                 this.outLabel.defaultMessage();
@@ -179,6 +179,6 @@ export class App {
         this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
         this.resizeTheEntirePage(pageMarginIncrease);
         this.model.load();
-        this.logger.writeLog('Running the Digit Recognition Web App!', false, false);
+        this.logger.writeLog('App: Running the Digit Recognition Web App!', false, false);
     }
 };
