@@ -10,7 +10,7 @@ var outLabelDMSG_P2 = "0</strong> to <strong>9</strong><\div>";
     var app = build();
     app.run();
 })(function () {
-    var logger = new Logger(false);
+    var logger = new Logger(true);
     var outputLabel = new OutputLabel('output', outLabelDMSG_P1 + outLabelDMSG_P2);
     var eraseButton = new Button('erase-btn', 'Erase', 'Wait');
     var canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);

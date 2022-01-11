@@ -62,8 +62,8 @@ var Model = (function () {
                         _a = this;
                         return [4, tf.loadLayersModel(this.path)];
                     case 1:
-                        _a.model = _b.sent();
-                        this.modelWasLoaded = this.model !== undefined;
+                        _a._model = _b.sent();
+                        this.modelWasLoaded = this._model !== undefined;
                         this.logger.writeLog(this.modelWasLoaded ?
                             "The model was loaded successfully!" :
                             "ERROR: The model was not Loaded, try to reload the page.");
@@ -76,11 +76,11 @@ var Model = (function () {
                 }
             });
         }); };
-        this.predict = function (sleepTime, returnDraw) {
+        this.analyzeDrawing = function (sleepTime, returnUserDrawing) {
             if (sleepTime === void 0) { sleepTime = 150; }
-            if (returnDraw === void 0) { returnDraw = false; }
+            if (returnUserDrawing === void 0) { returnUserDrawing = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var _canvas, inputTensor, error_1, out, value, prediction, probability;
+                var _canvas, inputTensor, error_1, prediction;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -110,8 +110,9 @@ var Model = (function () {
                                 throw Error('Canvas has no drawing, prediction canceled!');
                             }
                             if (!(this.checkLastDrawPredicted() === false)) return [3, 3];
-                            return [4, sleep(this.checkFirstPrediction() ?
-                                    Number((sleepTime / Math.PI).toFixed(0)) : sleepTime)];
+                            return [4, (0, sleep)(this.checkFirstPrediction() ?
+                                    Number((sleepTime / Math.PI).toFixed(0)) :
+                                    sleepTime)];
                         case 2:
                             _a.sent();
                             _a.label = 3;
@@ -127,22 +128,8 @@ var Model = (function () {
                             this.logger.writeLog(error_1);
                             return [2];
                         case 5:
-                            tf.engine().startScope();
-                            out = this.model.predict(inputTensor).dataSync();
-                            value = tf.argMax(out).dataSync();
-                            prediction = {
-                                name: DigitNames[value],
-                                certainty: tf.max(out).dataSync()[0],
-                                value: value
-                            };
-                            if (returnDraw === true) {
-                                prediction.draw = inputTensor.dataSync();
-                            }
-                            tf.engine().endScope();
-                            probability = Number((prediction.certainty * 100).toFixed(2));
-                            this.outputLabel.write("<div id='output-text'>The number drawn is <strong>" +
-                                (prediction.value + "</strong> (<strong>" + prediction.name + "</strong>)<div>"));
-                            this.logger.writeLog("Prediction: " + prediction.value + "  Certainty: " + probability + "%");
+                            prediction = this.makePrediction(inputTensor, returnUserDrawing);
+                            this.outputLabel.write("Finished Analysis.");
                             this.eraseButton.enable();
                             this.lastDrawPredicted = true;
                             this.predictions.push(prediction);
@@ -150,6 +137,23 @@ var Model = (function () {
                     }
                 });
             });
+        };
+        this.makePrediction = function (inputTensor, returnUserDrawing) {
+            if (returnUserDrawing === void 0) { returnUserDrawing = false; }
+            tf.engine().startScope();
+            var outputTensor = _this._model.predict(inputTensor).dataSync();
+            var predictedValue = tf.argMax(outputTensor).dataSync();
+            var predictionValueName = DigitNames[predictedValue];
+            var predictionCertainty = tf.max(outputTensor).dataSync();
+            tf.engine().endScope();
+            var prediction = {
+                name: predictionValueName,
+                value: predictedValue,
+                certainty: predictionCertainty,
+                userDrawing: returnUserDrawing ?
+                    inputTensor : undefined
+            };
+            return prediction;
         };
         this.activateHalt = function () {
             _this.halt = true;

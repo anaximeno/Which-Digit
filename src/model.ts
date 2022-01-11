@@ -2,11 +2,11 @@ import { Button, OutputLabel, Logger, sleep } from './common';
 import { Canvas } from './canvas';
 
 
-interface SinglePredictionI {
+export interface MPI {
     value: number;
     name: string;
     certainty: number;
-    draw?: any; // tf tensor output type
+    userDrawing?: any; // tf tensor output type
 }
 
 
@@ -20,8 +20,8 @@ const DigitNames = {
 
 
 export class Model {
-    private model: any;
-    private predictions: SinglePredictionI[];
+    private _model: any;
+    private predictions: MPI[];
     private readonly inputShape: number[];
     private readonly paddingShape: number[][];
     private modelWasLoaded: boolean;
@@ -57,8 +57,8 @@ export class Model {
     
     load = async () => {
         this.eraseButton.disable();
-        this.model = await tf.loadLayersModel(this.path);
-        this.modelWasLoaded = this.model !== undefined;
+        this._model = await tf.loadLayersModel(this.path);
+        this.modelWasLoaded = this._model !== undefined;
         this.logger.writeLog(this.modelWasLoaded ?
             "The model was loaded successfully!" :
             "ERROR: The model was not Loaded, try to reload the page."
@@ -70,14 +70,9 @@ export class Model {
         }
     }
 
-    predict = async (
-        sleepTime: number = 150,
-        returnDraw: boolean = false
-    ): Promise<SinglePredictionI> => {
+    analyzeDrawing = async (sleepTime: number = 150, returnUserDrawing: boolean = false): Promise<MPI> => {
         const _canvas = this.canvas.getCanvasElement();
         this.eraseButton.disable();
-        // REMIND: I changed the txt bellow from `Prediction` to `Analyzing` because I believed
-        // it was better for non technical persons to understand what is really happening.
         this.outputLabel.write("<-<-< Analyzing >->->");
 
         const inputTensor = tf.browser.fromPixels(_canvas)
@@ -88,6 +83,7 @@ export class Model {
             .expandDims(3)
             .toFloat()
             .div(255.0);
+
 
         try {
             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
@@ -104,9 +100,13 @@ export class Model {
                 throw Error('Canvas has no drawing, prediction canceled!');
             }
     
-            if (this.checkLastDrawPredicted() === false)
+            if (this.checkLastDrawPredicted() === false) {
                 await sleep(this.checkFirstPrediction() ? 
-                    Number((sleepTime/Math.PI).toFixed(0)) : sleepTime);
+                    Number((sleepTime / Math.PI).toFixed(0)) : 
+                    sleepTime
+                );
+            }
+        
             if (this.checkHalt() === true) {
                 this.eraseButton.enable();
                 this.outputLabel.defaultMessage();
@@ -117,34 +117,32 @@ export class Model {
             return ;
         }
 
-        tf.engine().startScope(); //Prevents high usage of gpu
-        
-        const out = this.model.predict(inputTensor).dataSync();
-        const value: number = tf.argMax(out).dataSync();
+        const prediction = this.makePrediction(inputTensor, returnUserDrawing);
 
-        const prediction: SinglePredictionI = {
-            name: DigitNames[value],
-            certainty: tf.max(out).dataSync()[0],
-            value,
-        }
-
-        if (returnDraw === true) {
-            prediction.draw = inputTensor.dataSync();
-        }
-
-        tf.engine().endScope(); 
-        
-        const probability = Number((prediction.certainty * 100).toFixed(2));
-
-        this.outputLabel.write(
-            "<div id='output-text'>The number drawn is <strong>"+
-            `${prediction.value}</strong> (<strong>${prediction.name}</strong>)<\div>`
-        );
-    
-        this.logger.writeLog(`Prediction: ${prediction.value}  Certainty: ${probability}%`)
+        this.outputLabel.write("Finished Analysis.")
         this.eraseButton.enable();
         this.lastDrawPredicted = true;
         this.predictions.push(prediction);
+
+        return prediction;
+    }
+
+    makePrediction = (inputTensor: any, returnUserDrawing: boolean = false): MPI => {
+        // This prevents high usage of GPU
+        tf.engine().startScope();
+        const outputTensor = this._model.predict(inputTensor).dataSync();
+        const predictedValue = tf.argMax(outputTensor).dataSync();
+        const predictionValueName = DigitNames[predictedValue];
+        const predictionCertainty = tf.max(outputTensor).dataSync();
+        tf.engine().endScope();
+
+        const prediction: MPI = {
+            name: predictionValueName,
+            value: predictedValue,
+            certainty: predictionCertainty,
+            userDrawing: returnUserDrawing ?
+                        inputTensor :undefined,
+        }
 
         return prediction;
     }
