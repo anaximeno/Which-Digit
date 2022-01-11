@@ -33,15 +33,15 @@ var Canvas = (function () {
         this.canvasBetterSize = function (paddingIncrement) {
             if (paddingIncrement === void 0) { paddingIncrement = 30; }
             var _a = _this.canvasSize, width = _a.width, height = _a.height;
-            var maxSize = max(width, height);
+            var maxSize = (0, max)(width, height);
             var innerW = window.innerWidth, outerW = window.outerWidth, o = __rest(window, ["innerWidth", "outerWidth"]);
-            var betterWidth = min(innerW, outerW) || innerW;
+            var betterWidth = (0, min)(innerW, outerW) || innerW;
             return betterWidth > (maxSize + paddingIncrement) ?
                 maxSize : (betterWidth - paddingIncrement);
         };
         this.ctxBetterSize = function () {
             var _a = _this.canvasSize, canvasW = _a.width, canvasH = _a.height;
-            var maxCanvasSize = max(canvasW, canvasH);
+            var maxCanvasSize = (0, max)(canvasW, canvasH);
             return (_this.canvasBetterSize() * _this.ctxSize) / maxCanvasSize;
         };
         this.setUpCtx = function (strokeStyle, fillStyle, lineJoin, lineCap) {
