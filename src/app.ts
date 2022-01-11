@@ -136,7 +136,7 @@ export class App {
         const main = document.getElementsByTagName('html')[0];
     
         // TODO: maybe change method name to canvasIdealSize
-        const canvasSize = this.canvas.canvasBetterSize();
+        const canvasSize = this.canvas.idealCanvasSize();
     
         main.style.height = max(
             innerH, pageMarginIncrease + canvasSize
