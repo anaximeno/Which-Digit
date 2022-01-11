@@ -6,7 +6,7 @@ import { Model } from './model'
 import { App } from "./app";
 
 
-const DEBUG_MODE_ENABLED = true
+const DEBUG_MODE_ENABLED = false;
 const DefaultMsgP01 = "<div id='output-text'>Draw any digit between <strong>";
 const DefaultMsgP02 = "0</strong> to <strong>9</strong><\div>";
 

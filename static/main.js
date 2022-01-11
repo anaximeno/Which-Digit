@@ -6,7 +6,7 @@ import { Button } from "./common.js";
 import { Canvas } from "./canvas.js";
 import { Model } from "./model.js";
 import { App } from "./app.js";
-var DEBUG_MODE_ENABLED = true;
+var DEBUG_MODE_ENABLED = false;
 var DefaultMsgP01 = "<div id='output-text'>Draw any digit between <strong>";
 var DefaultMsgP02 = "0</strong> to <strong>9</strong><\div>";
 (function (build) {
