@@ -1,4 +1,4 @@
-export interface CtxPosI {
+export interface PositionInterface {
     x: number;
     y: number;
     z?: number;
@@ -98,21 +98,21 @@ export class Button extends OutputLabel {
     }
 }
 
-interface SingleLogI {
+interface LogInterface {
     time: string;
     message: string;
 }
 
 export class Logger {
-    private log: SingleLogI[] = [];
+    static logs: LogInterface[] = [];
 
-    constructor(public debugMode: boolean) { 
-        this.writeLog(`Logs ${this.debugMode ? 'enabled' : 'disabled'}.`, false, true);
+    constructor(public debugMode: boolean) {
+        this.writeLog(`Debug mode ${this.debugMode ? 'enabled' : 'disabled'}.`, false, true);
     }
-    
+
     static getTime = (): string => {
-        const zeroPad = (n: number): string =>  
-                      n < 10 ? '0' + n.toString() : n.toString();
+        const zeroPad = (num: number): string =>  
+                      num < 10 ? '0' + num.toString() : num.toString();
 
         const date = new Date();
         const hours = zeroPad(date.getHours());
@@ -121,16 +121,17 @@ export class Logger {
 
         return `${hours}:${minutes}:${seconds}`
     }
-    
-    private saveLog = (message: string, time: string) => {
-        this.log.push({ time, message });
+
+    saveLog = (message: string, time: string) => {
+        Logger.logs.push({ time, message });
     }
 
     writeLog = (message: string, time: boolean = true, force?: boolean) => {
-        const prefix = time ? `${Logger.getTime()} - ` : '';
+        const currentTime = Logger.getTime();
+        const prefix = time ? `[${currentTime}] ` : '';
+        this.saveLog(message, currentTime);
         if (this.debugMode === true || force === true) {
             console.log(`${prefix + message}`);
         }
-        this.saveLog(message, Logger.getTime());
     }   
 }
