@@ -64,9 +64,9 @@ var Model = (function () {
                     case 1:
                         _a._model = _b.sent();
                         this.modelWasLoaded = this._model !== undefined;
-                        this.logger.writeLog(this.modelWasLoaded ?
+                        this.logger.writeLog('Model.load: ' + (this.modelWasLoaded ?
                             "The model was loaded successfully!" :
-                            "ERROR: The model was not Loaded, try to reload the page.");
+                            "Error: The model was not loaded, try to reload the page."));
                         if (this.modelWasLoaded === true) {
                             this.makePrediction(this.getInputTensor());
                             this.canvas.getCanvasElement().style.cursor = 'crosshair';
@@ -88,25 +88,26 @@ var Model = (function () {
                 .toFloat()
                 .div(255.0);
         };
-        this.analyzeDrawing = function (sleepTime, returnUserDrawing) {
-            if (sleepTime === void 0) { sleepTime = 150; }
-            if (returnUserDrawing === void 0) { returnUserDrawing = false; }
+        this.analyzeDrawing = function (wait, returnDrawing, save) {
+            if (wait === void 0) { wait = 150; }
+            if (returnDrawing === void 0) { returnDrawing = false; }
+            if (save === void 0) { save = false; }
             return __awaiter(_this, void 0, void 0, function () {
                 var inputTensor, prediction;
                 var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            this.eraseButton.disable();
                             this.outputLabel.write("<<< Analyzing your Drawings >>>");
+                            this.eraseButton.disable();
                             inputTensor = this.getInputTensor();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
                                 this.activateHalt(function () {
                                     _this.eraseButton.enable();
                                     _this.outputLabel.defaultMessage();
-                                    _this.logger.writeLog(_this.modelWasLoaded ?
-                                        'Prediction canceled, model was not loaded yet!' :
-                                        'Drawing already, prediction canceled!');
+                                    _this.logger.writeLog('Model.analyzeDrawing: ' + (_this.modelWasLoaded ?
+                                        'model was not loaded yet, prediction canceled!' :
+                                        'user is drawing, prediction canceled!'));
                                 });
                             }
                             else if (inputTensor.sum().dataSync()[0] === 0) {
@@ -114,30 +115,28 @@ var Model = (function () {
                                     _this.eraseButton.enable();
                                     _this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
                                         "  Click and Hold to draw.<\div>");
-                                    _this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+                                    _this.logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
                                 });
                             }
-                            return [4, (0, sleep)(this.checkLastDrawPredicted() === false ? sleepTime : 0)];
-                        case 1:
-                            _a.sent();
-                            if (this.checkHalt()) {
-                                return [2];
-                            }
-                            else {
-                                prediction = this.makePrediction(inputTensor, returnUserDrawing);
-                                this.outputLabel.write("Finished Analysis.");
-                                this.eraseButton.enable();
-                                this.lastDrawPredicted = true;
-                                this.predictions.push(prediction);
-                                return [2, prediction];
-                            }
+                            if (!this.checkHalt()) return [3, 1];
                             return [2];
+                        case 1: return [4, (0, sleep)(this.checkLastDrawPredicted() === false ? wait : 0)];
+                        case 2:
+                            _a.sent();
+                            this.lastDrawPredicted = true;
+                            prediction = this.makePrediction(inputTensor, returnDrawing);
+                            if (save === true) {
+                                this.predictions.push(prediction);
+                            }
+                            this.outputLabel.write("Analysis finished.");
+                            this.eraseButton.enable();
+                            return [2, prediction];
                     }
                 });
             });
         };
-        this.makePrediction = function (inputTensor, returnUserDrawing) {
-            if (returnUserDrawing === void 0) { returnUserDrawing = false; }
+        this.makePrediction = function (inputTensor, returnDrawing) {
+            if (returnDrawing === void 0) { returnDrawing = false; }
             tf.engine().startScope();
             var outputTensor = _this._model.predict(inputTensor).dataSync();
             var predictedValue = tf.argMax(outputTensor).dataSync();
@@ -148,38 +147,39 @@ var Model = (function () {
                 name: predictionValueName,
                 value: predictedValue,
                 certainty: predictionCertainty,
-                userDrawing: returnUserDrawing ?
+                userDrawing: returnDrawing ?
                     inputTensor : undefined
             };
             return prediction;
         };
-        this.activateHalt = function (haltEvent) {
+        this.activateHalt = function (postHaltProcedure) {
             _this.halt = true;
-            if (haltEvent) {
-                _this.haltEvent = haltEvent;
+            if (postHaltProcedure !== undefined) {
+                _this.postHaltProcedure = postHaltProcedure;
             }
         };
         this.deactivateHalt = function () {
             _this.halt = false;
-            _this.haltEvent = undefined;
+            _this.postHaltProcedure = undefined;
         };
         this.checkHalt = function () {
-            if (_this.halt === true) {
-                if (_this.haltEvent) {
-                    _this.haltEvent();
+            var halt = _this.halt;
+            if (halt === true) {
+                if (_this.postHaltProcedure !== undefined) {
+                    _this.postHaltProcedure();
                 }
                 _this.deactivateHalt();
-                return true;
             }
-            return false;
+            return halt;
         };
         this.checkLastDrawPredicted = function () {
-            if (_this.lastDrawPredicted === true) {
+            var lastDrawPredicted = _this.lastDrawPredicted;
+            if (lastDrawPredicted === true) {
                 _this.lastDrawPredicted = false;
-                return true;
             }
-            return false;
+            return lastDrawPredicted;
         };
+        this.predictions = [];
         this.modelWasLoaded = false;
         this.halt = false;
         this.lastDrawPredicted = true;
@@ -191,7 +191,6 @@ var Model = (function () {
             [padding, padding],
             [padding, padding]
         ];
-        this.predictions = [];
     }
     return Model;
 }());

@@ -183,7 +183,7 @@ var App = (function () {
                 _this.logger.writeLog(logMessage, true, false);
             }
             else {
-                _this.logger.writeLog('App.showResults failed: no prediction to show!');
+                _this.logger.writeLog('App.showResults: no predictions to show.');
             }
         };
         this.resizeTheEntirePage = function (pageMarginIncrease) {
@@ -192,7 +192,7 @@ var App = (function () {
             var output = document.getElementById('output');
             var pipe = document.getElementById('pipeline');
             var main = document.getElementsByTagName('html')[0];
-            var canvasSize = _this.canvas.canvasBetterSize();
+            var canvasSize = _this.canvas.idealCanvasSize();
             main.style.height = (0, max)(innerH, pageMarginIncrease + canvasSize).toString() + "px";
             output.style.width = canvasSize.toString() + "px";
             pipe.style.width = output.style.width;
@@ -206,7 +206,7 @@ var App = (function () {
             _this.eraseButton.setEvent('click', function () {
                 _this.canvas.clear();
                 _this.model.activateHalt(function () {
-                    _this.logger.writeLog("Clear button was clicked, prediction canceled!");
+                    _this.logger.writeLog("App: clear button clicked, canceled prediction!");
                 });
                 if (_this.model.isLoaded() === true) {
                     _this.outLabel.defaultMessage();
@@ -221,7 +221,7 @@ var App = (function () {
             _this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
             _this.resizeTheEntirePage(pageMarginIncrease);
             _this.model.load();
-            _this.logger.writeLog('Running the Digit Recognition Web App!', false, false);
+            _this.logger.writeLog('App: Running the Digit Recognition Web App!', false, false);
         };
         this.appDefinitions = {
             sleepTimeOnMouseOut: 1500,

@@ -111,23 +111,24 @@ var Logger = (function () {
     function Logger(debugMode) {
         var _this = this;
         this.debugMode = debugMode;
-        this.log = [];
         this.saveLog = function (message, time) {
-            _this.log.push({ time: time, message: message });
+            Logger.logs.push({ time: time, message: message });
         };
         this.writeLog = function (message, time, force) {
             if (time === void 0) { time = true; }
-            var prefix = time ? "".concat(Logger.getTime(), " - ") : '';
+            var currentTime = Logger.getTime();
+            var prefix = time ? "[".concat(currentTime, "] ") : '';
+            _this.saveLog(message, currentTime);
             if (_this.debugMode === true || force === true) {
                 console.log("".concat(prefix + message));
             }
-            _this.saveLog(message, Logger.getTime());
         };
-        this.writeLog("Logs ".concat(this.debugMode ? 'enabled' : 'disabled', "."), false, true);
+        this.writeLog("Debug mode ".concat(this.debugMode ? 'enabled' : 'disabled', "."), false, true);
     }
+    Logger.logs = [];
     Logger.getTime = function () {
-        var zeroPad = function (n) {
-            return n < 10 ? '0' + n.toString() : n.toString();
+        var zeroPad = function (num) {
+            return num < 10 ? '0' + num.toString() : num.toString();
         };
         var date = new Date();
         var hours = zeroPad(date.getHours());

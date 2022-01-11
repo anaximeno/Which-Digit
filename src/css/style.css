@@ -35,7 +35,7 @@ h1 {
     cursor: default;
 }
 #pipeline, #output {
-    /* width: 400px; */
+    width: 400px;
     margin: auto;
     align-content: center;
     text-align: center;

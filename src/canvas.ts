@@ -1,4 +1,5 @@
-import { min , max, CtxPosI } from "./common"
+import { PositionInterface } from "./common"
+import { min , max } from "./common"
 
 
 export interface SizeI {
@@ -11,7 +12,7 @@ export interface SizeI {
 export class Canvas {
     protected readonly canvas: HTMLCanvasElement;
     private readonly ctx: CanvasRenderingContext2D;
-    private lastCtxPos: CtxPosI;
+    private lastCtxPos: PositionInterface;
     public drawing: boolean;
 
     constructor(
@@ -33,15 +34,15 @@ export class Canvas {
         return this.getCanvasElement().getContext('2d');
     }
 
-    setLastCtxPosition = (pos: CtxPosI) => {
+    setLastCtxPosition = (pos: PositionInterface) => {
         this.lastCtxPos = pos;
     }
 
-    getLastCtxPosition = (): CtxPosI => {
+    getLastCtxPosition = (): PositionInterface => {
         return this.lastCtxPos;
     }
 
-    canvasBetterSize = (paddingIncrement: number = 30): number => {
+    idealCanvasSize = (paddingIncrement: number = 30): number => {
         const {width, height} = this.canvasSize;
         const maxSize = max(width, height);
         const {innerWidth: innerW, outerWidth: outerW, ...o} = window;
@@ -50,10 +51,10 @@ export class Canvas {
             maxSize : (betterWidth - paddingIncrement);
     }
 
-    ctxBetterSize = (): number => {
+    idealCtxSize = (): number => {
         const {width: canvasW, height: canvasH} = this.canvasSize;
         const maxCanvasSize = max(canvasW, canvasH);
-        return (this.canvasBetterSize()*this.ctxSize) / maxCanvasSize;
+        return (this.idealCanvasSize() * this.ctxSize) / maxCanvasSize;
     }
 
     private setUpCtx = (
@@ -67,17 +68,17 @@ export class Canvas {
         this.ctx.lineJoin = lineJoin;
         this.ctx.lineCap = lineCap;
     }
-    
+
     resize = () => {
-        const canvasSize = this.canvasBetterSize();
-        const ctxSize = this.ctxBetterSize();
+        const canvasSize = this.idealCanvasSize();
+        const ctxSize = this.idealCtxSize();
         this.canvas.width = canvasSize;
         this.canvas.height = canvasSize;
         this.ctx.lineWidth = ctxSize;
         this.setUpCtx();
     }
 
-    setEvent = (type: string, listener: any) => {
+    setEvent = (type: string, listener: EventListenerOrEventListenerObject) => {
         this.canvas.addEventListener(type, listener);
     }
 

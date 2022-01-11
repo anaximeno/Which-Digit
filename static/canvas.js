@@ -30,7 +30,7 @@ var Canvas = (function () {
         this.getLastCtxPosition = function () {
             return _this.lastCtxPos;
         };
-        this.canvasBetterSize = function (paddingIncrement) {
+        this.idealCanvasSize = function (paddingIncrement) {
             if (paddingIncrement === void 0) { paddingIncrement = 30; }
             var _a = _this.canvasSize, width = _a.width, height = _a.height;
             var maxSize = (0, max)(width, height);
@@ -39,10 +39,10 @@ var Canvas = (function () {
             return betterWidth > (maxSize + paddingIncrement) ?
                 maxSize : (betterWidth - paddingIncrement);
         };
-        this.ctxBetterSize = function () {
+        this.idealCtxSize = function () {
             var _a = _this.canvasSize, canvasW = _a.width, canvasH = _a.height;
             var maxCanvasSize = (0, max)(canvasW, canvasH);
-            return (_this.canvasBetterSize() * _this.ctxSize) / maxCanvasSize;
+            return (_this.idealCanvasSize() * _this.ctxSize) / maxCanvasSize;
         };
         this.setUpCtx = function (strokeStyle, fillStyle, lineJoin, lineCap) {
             if (strokeStyle === void 0) { strokeStyle = 'white'; }
@@ -55,8 +55,8 @@ var Canvas = (function () {
             _this.ctx.lineCap = lineCap;
         };
         this.resize = function () {
-            var canvasSize = _this.canvasBetterSize();
-            var ctxSize = _this.ctxBetterSize();
+            var canvasSize = _this.idealCanvasSize();
+            var ctxSize = _this.idealCtxSize();
             _this.canvas.width = canvasSize;
             _this.canvas.height = canvasSize;
             _this.ctx.lineWidth = ctxSize;
