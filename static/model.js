@@ -80,7 +80,7 @@ var Model = (function () {
             if (sleepTime === void 0) { sleepTime = 150; }
             if (returnUserDrawing === void 0) { returnUserDrawing = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var _canvas, inputTensor, error_1, prediction;
+                var _canvas, inputTensor, prediction;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -95,11 +95,8 @@ var Model = (function () {
                                 .expandDims(3)
                                 .toFloat()
                                 .div(255.0);
-                            _a.label = 1;
-                        case 1:
-                            _a.trys.push([1, 4, , 5]);
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
-                                throw Error(this.modelWasLoaded ?
+                                this.logger.writeLog(this.modelWasLoaded ?
                                     'Prediction canceled, model was not loaded yet!' :
                                     'Drawing already, prediction canceled!');
                             }
@@ -107,27 +104,21 @@ var Model = (function () {
                                 this.eraseButton.enable();
                                 this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
                                     "Click and Hold to draw.<\div>");
-                                throw Error('Canvas has no drawing, prediction canceled!');
+                                this.logger.writeLog('Canvas has no drawing, prediction canceled!');
                             }
-                            if (!(this.checkLastDrawPredicted() === false)) return [3, 3];
+                            if (!(this.checkLastDrawPredicted() === false)) return [3, 2];
                             return [4, (0, sleep)(this.checkFirstPrediction() ?
                                     Number((sleepTime / Math.PI).toFixed(0)) :
                                     sleepTime)];
-                        case 2:
+                        case 1:
                             _a.sent();
-                            _a.label = 3;
-                        case 3:
+                            _a.label = 2;
+                        case 2:
                             if (this.checkHalt() === true) {
                                 this.eraseButton.enable();
                                 this.outputLabel.defaultMessage();
-                                throw Error('Halt Received, prediction was canceled!');
+                                this.logger.writeLog('Halt Received, prediction was canceled!');
                             }
-                            return [3, 5];
-                        case 4:
-                            error_1 = _a.sent();
-                            this.logger.writeLog(error_1);
-                            return [2];
-                        case 5:
                             prediction = this.makePrediction(inputTensor, returnUserDrawing);
                             this.outputLabel.write("Finished Analysis.");
                             this.eraseButton.enable();

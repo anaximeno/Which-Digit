@@ -84,37 +84,31 @@ export class Model {
             .toFloat()
             .div(255.0);
 
-
-        try {
-            if (this.modelWasLoaded === false || this.canvas.drawing === true) {
-                throw Error(this.modelWasLoaded ?
-                    'Prediction canceled, model was not loaded yet!' : 
-                    'Drawing already, prediction canceled!'
-                );
-            } else if (inputTensor.sum().dataSync()[0] === 0) {
-                this.eraseButton.enable();
-                this.outputLabel.write(
-                    "<div id='output-text'><strong>TIP</strong>:"+
-                    "Click and Hold to draw.<\div>"
-                );
-                throw Error('Canvas has no drawing, prediction canceled!');
-            }
-    
-            if (this.checkLastDrawPredicted() === false) {
-                await sleep(this.checkFirstPrediction() ? 
-                    Number((sleepTime / Math.PI).toFixed(0)) : 
-                    sleepTime
-                );
-            }
         
-            if (this.checkHalt() === true) {
-                this.eraseButton.enable();
-                this.outputLabel.defaultMessage();
-                throw Error('Halt Received, prediction was canceled!');
-            }
-        } catch (error) {
-            this.logger.writeLog(error);
-            return ;
+        if (this.modelWasLoaded === false || this.canvas.drawing === true) {
+            this.logger.writeLog(this.modelWasLoaded ?
+                'Prediction canceled, model was not loaded yet!' : 
+                'Drawing already, prediction canceled!'
+            );
+        } else if (inputTensor.sum().dataSync()[0] === 0) {
+            this.eraseButton.enable();
+            this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:"+
+                "Click and Hold to draw.<\div>"
+            );
+            this.logger.writeLog('Canvas has no drawing, prediction canceled!');
+        }
+
+        if (this.checkLastDrawPredicted() === false) {
+            await sleep(this.checkFirstPrediction() ? 
+                Number((sleepTime / Math.PI).toFixed(0)) : 
+                sleepTime
+            );
+        }
+    
+        if (this.checkHalt() === true) {
+            this.eraseButton.enable();
+            this.outputLabel.defaultMessage();
+            this.logger.writeLog('Halt Received, prediction was canceled!');
         }
 
         const prediction = this.makePrediction(inputTensor, returnUserDrawing);
