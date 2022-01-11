@@ -14,7 +14,7 @@ const outLabelDMSG_P2 = "0</strong> to <strong>9</strong><\div>";
 })(() => {
     const logger = new Logger(false);
     const outputLabel = new OutputLabel('output', outLabelDMSG_P1+outLabelDMSG_P2);
-    const eraseButton = new Button('erase-btn', 'Erase', 'Wait');
+    const eraseButton = new Button('erase-btn', 'Clear all drawings', 'Please wait');
     const canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
     const model = new Model('./data/compiled/model.json', canvas, eraseButton, outputLabel, logger);
     return new App(logger, outputLabel, canvas, eraseButton, model);

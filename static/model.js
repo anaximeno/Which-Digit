@@ -97,7 +97,7 @@ var Model = (function () {
                     switch (_a.label) {
                         case 0:
                             this.eraseButton.disable();
-                            this.outputLabel.write("<-<-< Analyzing >->->");
+                            this.outputLabel.write("<<< Analyzing your Drawings >>>");
                             inputTensor = this.getInputTensor();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
                                 this.activateHalt();
@@ -109,7 +109,7 @@ var Model = (function () {
                                 this.activateHalt();
                                 this.eraseButton.enable();
                                 this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
-                                    "Click and Hold to draw.<\div>");
+                                    "  Click and Hold to draw.<\div>");
                                 this.logger.writeLog('Canvas has no drawing, prediction canceled!');
                             }
                             return [4, (0, sleep)(this.checkLastDrawPredicted() === false ? sleepTime : 0)];

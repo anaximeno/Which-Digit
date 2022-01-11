@@ -46,13 +46,19 @@
             #output {
                 font-size: 0.8em;
             }
+            #erase-btn {
+                font-size: 0.8em;
+            }
         }
         @media only screen and (max-width: 343px) {
             h1 {
                 font-size: 0.9em;
             }
             #output {
-                font-size: 0.8em;
+                font-size: 0.7em;
+            }
+            #erase-btn {
+                font-size: 0.7em;
             }
         }
     </style>
@@ -61,11 +67,11 @@
     <main>
         <h1>Handwritten Digit Recognition App</h1>
         <div class="box">
-            <div id="output" ><div id="output-text">Loading The Data, Please Wait(<strong>...</strong>)</div></div>
+            <div id="output" ><div id="output-text">Loading the data (...)</div></div>
             <canvas id="draw-canvas" class="digits-canvas" width="400" height="400"></canvas>
         </div>
         <div id="pipeline">
-            <button id="erase-btn" disabled>Erase</button>
+            <button id="erase-btn" disabled width="500">Please wait</button>
         </div>
     <script src="./static/main.js" type="module" defer></script>
     </main>

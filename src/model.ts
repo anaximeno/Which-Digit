@@ -84,7 +84,7 @@ export class Model {
 
     analyzeDrawing = async (sleepTime: number = 150, returnUserDrawing: boolean = false): Promise<MPI> => {
         this.eraseButton.disable();
-        this.outputLabel.write("<-<-< Analyzing >->->");
+        this.outputLabel.write("<<< Analyzing your Drawings >>>");
 
         const inputTensor = this.getInputTensor();
 
@@ -98,7 +98,7 @@ export class Model {
             this.activateHalt();
             this.eraseButton.enable();
             this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:"+
-                "Click and Hold to draw.<\div>"
+                "  Click and Hold to draw.<\div>"
             );
             this.logger.writeLog('Canvas has no drawing, prediction canceled!');
         }
