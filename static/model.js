@@ -96,11 +96,13 @@ var Model = (function () {
                                 .toFloat()
                                 .div(255.0);
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
+                                this.activateHalt();
                                 this.logger.writeLog(this.modelWasLoaded ?
                                     'Prediction canceled, model was not loaded yet!' :
                                     'Drawing already, prediction canceled!');
                             }
                             else if (inputTensor.sum().dataSync()[0] === 0) {
+                                this.activateHalt();
                                 this.eraseButton.enable();
                                 this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
                                     "Click and Hold to draw.<\div>");
@@ -116,8 +118,11 @@ var Model = (function () {
                         case 2:
                             if (this.checkHalt() === true) {
                                 this.eraseButton.enable();
-                                this.outputLabel.defaultMessage();
+                                if (inputTensor.sum().dataSync()[0] !== 0) {
+                                    this.outputLabel.defaultMessage();
+                                }
                                 this.logger.writeLog('Halt Received, prediction was canceled!');
+                                return [2];
                             }
                             prediction = this.makePrediction(inputTensor, returnUserDrawing);
                             this.outputLabel.write("Finished Analysis.");

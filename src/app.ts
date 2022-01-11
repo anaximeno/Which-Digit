@@ -113,16 +113,20 @@ export class App {
     }
 
     // TODO: analyse to when there are no prediction returned
-    private showResults = (prediction: MPI) => {
-        let {name, value, certainty, ..._} = prediction; 
-    
-        const outMessageP01 = "<div id='output-text'>The number drawn is <strong>";
-        const outMessageP02 = `${value}</strong> (<strong>${name}</strong>)<\div>`;
-        this.outLabel.write(outMessageP01 + outMessageP02);
+    private showResults = (prediction?: MPI) => {
+        if (prediction !== undefined) {
+            let {name, value, certainty, ..._} = prediction; 
+        
+            const outMessageP01 = "<div id='output-text'>The number drawn is <strong>";
+            const outMessageP02 = `${value}</strong> (<strong>${name}</strong>)<\div>`;
+            this.outLabel.write(outMessageP01 + outMessageP02);
 
-        const prob = Number((certainty * 100).toFixed(2));
-        const logMessage = `Prediction: ${value}  (certainty = ${prob}%)`;
-        this.logger.writeLog(logMessage, true, false);
+            const prob = Number((certainty * 100).toFixed(2));
+            const logMessage = `Prediction: ${value}  (certainty = ${prob}%)`;
+            this.logger.writeLog(logMessage, true, false);
+        } else {
+            this.logger.writeLog('App.showResults failed: no prediction to show!');
+        }
     }
 
     protected resizeTheEntirePage = (pageMarginIncrease: number = 300) => {

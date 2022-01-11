@@ -173,13 +173,18 @@ var App = (function () {
             }); });
         };
         this.showResults = function (prediction) {
-            var name = prediction.name, value = prediction.value, certainty = prediction.certainty, _ = __rest(prediction, ["name", "value", "certainty"]);
-            var outMessageP01 = "<div id='output-text'>The number drawn is <strong>";
-            var outMessageP02 = "".concat(value, "</strong> (<strong>").concat(name, "</strong>)<div>");
-            _this.outLabel.write(outMessageP01 + outMessageP02);
-            var prob = Number((certainty * 100).toFixed(2));
-            var logMessage = "Prediction: ".concat(value, "  (certainty = ").concat(prob, "%)");
-            _this.logger.writeLog(logMessage, true, false);
+            if (prediction !== undefined) {
+                var name_1 = prediction.name, value = prediction.value, certainty = prediction.certainty, _ = __rest(prediction, ["name", "value", "certainty"]);
+                var outMessageP01 = "<div id='output-text'>The number drawn is <strong>";
+                var outMessageP02 = "".concat(value, "</strong> (<strong>").concat(name_1, "</strong>)<div>");
+                _this.outLabel.write(outMessageP01 + outMessageP02);
+                var prob = Number((certainty * 100).toFixed(2));
+                var logMessage = "Prediction: ".concat(value, "  (certainty = ").concat(prob, "%)");
+                _this.logger.writeLog(logMessage, true, false);
+            }
+            else {
+                _this.logger.writeLog('App.showResults failed: no prediction to show!');
+            }
         };
         this.resizeTheEntirePage = function (pageMarginIncrease) {
             if (pageMarginIncrease === void 0) { pageMarginIncrease = 300; }
