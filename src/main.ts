@@ -12,7 +12,7 @@ const outLabelDMSG_P2 = "0</strong> to <strong>9</strong><\div>";
     const app = build();
     app.run();
 })(() => {
-    const logger = new Logger(true);
+    const logger = new Logger(false);
     const outputLabel = new OutputLabel('output', outLabelDMSG_P1+outLabelDMSG_P2);
     const eraseButton = new Button('erase-btn', 'Erase', 'Wait');
     const canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);
