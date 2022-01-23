@@ -112,7 +112,6 @@ export class App {
         });
     }
 
-    // TODO: analyse to when there are no prediction returned
     private showResults = (prediction?: MPI) => {
         if (prediction !== undefined) {
             let {name, value, certainty, ..._} = prediction; 
@@ -135,7 +134,6 @@ export class App {
         const pipe = document.getElementById('pipeline');
         const main = document.getElementsByTagName('html')[0];
     
-        // TODO: maybe change method name to canvasIdealSize
         const canvasSize = this.canvas.idealCanvasSize();
     
         main.style.height = max(
