@@ -4,11 +4,11 @@ import { Logger, sleep } from './common';
 import { Canvas } from './canvas';
 
 
-export interface MPI {
+export interface IPrediction {
     value: number;
     name: string;
     certainty: number;
-    userDrawing?: any; // tf tensor output type
+    predictedImage?: any; // tf tensor output type
 }
 
 
@@ -22,26 +22,21 @@ const DigitNames = {
 
 
 export class Model {
-    private _model: any;
-    private predictions: MPI[];
+    private mnet?: any;
     private readonly inputShape: number[];
     private readonly paddingShape: number[][];
-    private modelWasLoaded: boolean;
-    public lastDrawPredicted: boolean;
-    private halt: boolean;
-    private postHaltProcedure?: Function;
+    private predictions: IPrediction[] = [];
+    public lastDrawPredicted: boolean = true;
+    private modelWasLoaded?: boolean;
+    private __postHaltProcedure?: Function;
+    private __halt?: boolean;
 
     constructor(
         private readonly path: string,
         private readonly canvas: Canvas,
         private readonly eraseButton: Button,
         private readonly outputLabel: OutputLabel,
-        private readonly logger: Logger
     ) {
-        this.predictions = [];
-        this.modelWasLoaded = false;
-        this.halt = false;
-        this.lastDrawPredicted = true;
         const padding = 2;
         const inputSize = 36; 
         const shapeSize = inputSize - 2 * padding;
@@ -56,9 +51,9 @@ export class Model {
     
     load = async () => {
         this.eraseButton.disable();
-        this._model = await tf.loadLayersModel(this.path);
-        this.modelWasLoaded = this._model !== undefined;
-        this.logger.writeLog('Model.load: ' + (this.modelWasLoaded ?
+        this.mnet = await tf.loadLayersModel(this.path);
+        this.modelWasLoaded = this.mnet !== undefined;
+        Logger.getInstance().writeLog('Model.load: ' + (this.modelWasLoaded ?
             "The model was loaded successfully!" :
             "Error: The model was not loaded, try to reload the page.")
         );
@@ -72,7 +67,7 @@ export class Model {
         }
     }
 
-    private getInputTensor = (): any => {
+    private getInputTensor = () => {
         return tf.browser
             .fromPixels(this.canvas.getCanvasElement())
             .resizeBilinear(this.inputShape)
@@ -84,17 +79,18 @@ export class Model {
             .div(255.0);
     }
 
-    analyzeDrawing = async (wait: number = 150, returnDrawing: boolean = false, save: boolean = false): Promise<MPI> => {
+    analyzeDrawing = async (wait: number = 150, returnDrawing: boolean = false, save: boolean = false): Promise<IPrediction> => {
         this.outputLabel.write("<<< Analyzing your Drawings >>>");
         this.eraseButton.disable();
 
         const inputTensor = this.getInputTensor();
+        const logger = Logger.getInstance();
 
         if (this.modelWasLoaded === false || this.canvas.drawing === true) {
             this.activateHalt(() => {
                 this.eraseButton.enable();
                 this.outputLabel.defaultMessage();
-                this.logger.writeLog('Model.analyzeDrawing: ' + (this.modelWasLoaded ?
+                logger.writeLog('Model.analyzeDrawing: ' + (this.modelWasLoaded ?
                     'model was not loaded yet, prediction canceled!' : 
                     'user is drawing, prediction canceled!')
                 );
@@ -102,10 +98,8 @@ export class Model {
         } else if (inputTensor.sum().dataSync()[0] === 0) {
             this.activateHalt(() => {
                 this.eraseButton.enable();
-                this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:"+
-                    "  Click and Hold to draw.<\div>"
-                );
-                this.logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
+                this.outputLabel.write(`<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>`);
+                logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
             });
         }
 
@@ -122,44 +116,43 @@ export class Model {
         }
     }
 
-    private makePrediction = <T>(inputTensor: T, returnDrawing: boolean = false): MPI => {
+    private makePrediction = <T>(inputTensor: T, returnImagePredicted?: boolean): IPrediction => {
         // This prevents high usage of GPU
         tf.engine().startScope();
-        const outputTensor = this._model.predict(inputTensor).dataSync();
+        const outputTensor = this.mnet.predict(inputTensor).dataSync();
         const predictedValue = tf.argMax(outputTensor).dataSync();
         const predictionValueName = DigitNames[predictedValue];
         const predictionCertainty = tf.max(outputTensor).dataSync();
         tf.engine().endScope();
+        const userInputImage: T = returnImagePredicted ? inputTensor : undefined;
 
-        const prediction: MPI = {
+
+        return {
             name: predictionValueName,
             value: predictedValue,
             certainty: predictionCertainty,
-            userDrawing: returnDrawing ?
-                        inputTensor :undefined,
+            predictedImage: userInputImage
         }
-
-        return prediction;
     }
 
     activateHalt = (postHaltProcedure?: Function): void => {
-        this.halt = true;
+        this.__halt = true;
         if (postHaltProcedure !== undefined) {
-            this.postHaltProcedure = postHaltProcedure;
+            this.__postHaltProcedure = postHaltProcedure;
         }
     }
 
     deactivateHalt = () => {
-        this.halt = false;
-        this.postHaltProcedure = undefined;
+        this.__halt = false;
+        this.__postHaltProcedure = undefined;
     }
 
     checkHalt = (): boolean => {
-        const halt = this.halt;
+        const halt = this.__halt;
 
         if (halt === true) {
-            if (this.postHaltProcedure !== undefined) {
-                this.postHaltProcedure();
+            if (this.__postHaltProcedure !== undefined) {
+                this.__postHaltProcedure();
             }
 
             this.deactivateHalt();

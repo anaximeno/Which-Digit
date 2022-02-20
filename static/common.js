@@ -3,19 +3,17 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
 export const __esModule = true;
-var min = function () {
+export function min () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
@@ -35,10 +33,8 @@ var min = function () {
             break;
     }
     return minimun;
-};
-const _min = min;
-export { _min as min };
-var max = function () {
+}
+export function max () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
@@ -58,14 +54,10 @@ var max = function () {
             break;
     }
     return maximum;
-};
-const _max = max;
-export { _max as max };
-var sleep = function (milisecs) {
+}
+export function sleep (milisecs) {
     return new Promise(function (resolve) { return setTimeout(resolve, milisecs); });
-};
-const _sleep = sleep;
-export { _sleep as sleep };
+}
 var OutputLabel = (function () {
     function OutputLabel(selector, defaultMsg) {
         var _this = this;
@@ -97,8 +89,8 @@ var Button = (function (_super) {
             _this.button.disabled = true;
             _this.write(_this.disableMsg);
         };
-        _this.setEvent = function (event, listener) {
-            _this.button.addEventListener(event, listener);
+        _this.setEvent = function (event) {
+            _this.button.addEventListener(event.type, event.listener);
         };
         _this.button = _this.element;
         return _this;
@@ -108,33 +100,43 @@ var Button = (function (_super) {
 const _Button = Button;
 export { _Button as Button };
 var Logger = (function () {
-    function Logger(debugMode) {
+    function Logger() {
         var _this = this;
-        this.debugMode = debugMode;
-        this.saveLog = function (message, time) {
-            Logger.logs.push({ time: time, message: message });
+        this.saveLog = function (log) {
+            Logger.logs.push(log);
         };
-        this.writeLog = function (message, time, force) {
-            if (time === void 0) { time = true; }
+        this.writeLog = function (message, force, hideTime) {
+            if (force === void 0) { force = false; }
+            if (hideTime === void 0) { hideTime = false; }
             var currentTime = Logger.getTime();
-            var prefix = time ? "[".concat(currentTime, "] ") : '';
-            _this.saveLog(message, currentTime);
-            if (_this.debugMode === true || force === true) {
-                console.log("".concat(prefix + message));
+            var prefix = hideTime ? '' : "[" + currentTime + "] ";
+            _this.saveLog({ time: currentTime, message: message });
+            if (Logger.printDebugLogs === true || force === true) {
+                console.log("" + (prefix + message));
             }
         };
-        this.writeLog("Debug mode ".concat(this.debugMode ? 'enabled' : 'disabled', "."), false, true);
+        this.writeLog("Debug mode " + (Logger.printDebugLogs ? 'enabled' : 'disabled') + ".", true, true);
+        Logger.instance = this;
     }
+    Logger.printDebugLogs = false;
+    Logger.instance = undefined;
     Logger.logs = [];
+    Logger.getInstance = function () {
+        if (Logger.instance !== undefined) {
+            return Logger.instance;
+        }
+        else {
+            return new Logger();
+        }
+    };
     Logger.getTime = function () {
-        var zeroPad = function (num) {
-            return num < 10 ? '0' + num.toString() : num.toString();
-        };
+        var zeroPad = function (num) { return num < 10 ?
+            '0' + num.toString() : num.toString(); };
         var date = new Date();
         var hours = zeroPad(date.getHours());
         var minutes = zeroPad(date.getMinutes());
         var seconds = zeroPad(date.getSeconds());
-        return "".concat(hours, ":").concat(minutes, ":").concat(seconds);
+        return hours + ":" + minutes + ":" + seconds;
     };
     return Logger;
 }());

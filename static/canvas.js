@@ -18,30 +18,24 @@ var Canvas = (function () {
         this.selector = selector;
         this.canvasSize = canvasSize;
         this.ctxSize = ctxSize;
-        this.getCanvasElement = function () {
-            return document.getElementById(_this.selector);
-        };
-        this.getCtxElement = function () {
-            return _this.getCanvasElement().getContext('2d');
-        };
-        this.setLastCtxPosition = function (pos) {
-            _this.lastCtxPos = pos;
-        };
-        this.getLastCtxPosition = function () {
-            return _this.lastCtxPos;
+        this.getCanvasElement = function () { return _this.canvasElement; };
+        this.getCtxElement = function () { return _this.ctxElement; };
+        this.getLastCtxPosition = function () { return _this.lastCtxPos; };
+        this.setLastCtxPosition = function (position) {
+            _this.lastCtxPos = position;
         };
         this.idealCanvasSize = function (paddingIncrement) {
             if (paddingIncrement === void 0) { paddingIncrement = 30; }
             var _a = _this.canvasSize, width = _a.width, height = _a.height;
-            var maxSize = (0, max)(width, height);
+            var maxSize = max(width, height);
             var innerW = window.innerWidth, outerW = window.outerWidth, o = __rest(window, ["innerWidth", "outerWidth"]);
-            var betterWidth = (0, min)(innerW, outerW) || innerW;
+            var betterWidth = min(innerW, outerW) || innerW;
             return betterWidth > (maxSize + paddingIncrement) ?
                 maxSize : (betterWidth - paddingIncrement);
         };
         this.idealCtxSize = function () {
             var _a = _this.canvasSize, canvasW = _a.width, canvasH = _a.height;
-            var maxCanvasSize = (0, max)(canvasW, canvasH);
+            var maxCanvasSize = max(canvasW, canvasH);
             return (_this.idealCanvasSize() * _this.ctxSize) / maxCanvasSize;
         };
         this.setUpCtx = function (strokeStyle, fillStyle, lineJoin, lineCap) {
@@ -49,30 +43,30 @@ var Canvas = (function () {
             if (fillStyle === void 0) { fillStyle = 'white'; }
             if (lineJoin === void 0) { lineJoin = 'round'; }
             if (lineCap === void 0) { lineCap = 'round'; }
-            _this.ctx.strokeStyle = strokeStyle;
-            _this.ctx.fillStyle = fillStyle;
-            _this.ctx.lineJoin = lineJoin;
-            _this.ctx.lineCap = lineCap;
+            _this.ctxElement.strokeStyle = strokeStyle;
+            _this.ctxElement.fillStyle = fillStyle;
+            _this.ctxElement.lineJoin = lineJoin;
+            _this.ctxElement.lineCap = lineCap;
         };
         this.resize = function () {
             var canvasSize = _this.idealCanvasSize();
             var ctxSize = _this.idealCtxSize();
-            _this.canvas.width = canvasSize;
-            _this.canvas.height = canvasSize;
-            _this.ctx.lineWidth = ctxSize;
+            _this.canvasElement.width = canvasSize;
+            _this.canvasElement.height = canvasSize;
+            _this.ctxElement.lineWidth = ctxSize;
             _this.setUpCtx();
         };
-        this.setEvent = function (type, listener) {
-            _this.canvas.addEventListener(type, listener);
+        this.setEvent = function (event) {
+            _this.canvasElement.addEventListener(event.type, event.listener);
         };
         this.clear = function () {
-            var canvasSize = _this.canvas.width;
-            _this.ctx.clearRect(0, 0, canvasSize, canvasSize);
+            var limit = _this.canvasElement.width;
+            _this.ctxElement.clearRect(0, 0, limit, limit);
         };
         this.lastCtxPos = { x: 0, y: 0 };
         this.drawing = false;
-        this.canvas = document.getElementById(selector);
-        this.ctx = this.canvas.getContext('2d');
+        this.canvasElement = document.getElementById(selector);
+        this.ctxElement = this.canvasElement.getContext('2d');
     }
     return Canvas;
 }());
