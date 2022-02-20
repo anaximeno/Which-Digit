@@ -111,7 +111,7 @@ export class Logger{
     static logs: ILogMessage[] = [];
 
     private constructor() {
-        this.writeLog(`Debug mode ${Logger.printDebugLogs ? 'enabled' : 'disabled'}.`, false, true);
+        this.writeLog(`Debug mode ${Logger.printDebugLogs ? 'enabled' : 'disabled'}.`, true, true);
         Logger.instance = this;
     }
 

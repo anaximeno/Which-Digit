@@ -5,7 +5,7 @@ import { App } from "./app";
 
 
 (() => {
-    Logger.printDebugLogs = true;
+    Logger.printDebugLogs = false;
 
     const eraseButton = new Button('erase-btn', 'Clear', 'Please wait');
     const canvas = new Canvas('draw-canvas', { width: 400, height: 400 }, 22);

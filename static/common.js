@@ -115,7 +115,7 @@ var Logger = (function () {
                 console.log("" + (prefix + message));
             }
         };
-        this.writeLog("Debug mode " + (Logger.printDebugLogs ? 'enabled' : 'disabled') + ".", false, true);
+        this.writeLog("Debug mode " + (Logger.printDebugLogs ? 'enabled' : 'disabled') + ".", true, true);
         Logger.instance = this;
     }
     Logger.printDebugLogs = false;
