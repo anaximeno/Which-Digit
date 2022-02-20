@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 export const __esModule = true;
-import { sleep } from "./common.js";
+import { Logger, sleep } from "./common.js";
 var DigitNames = {
     0: 'Zero', 1: 'One',
     2: 'Two', 3: 'Three',
@@ -45,13 +45,14 @@ var DigitNames = {
     8: 'Eight', 9: 'Nine'
 };
 var Model = (function () {
-    function Model(path, canvas, eraseButton, outputLabel, logger) {
+    function Model(path, canvas, eraseButton, outputLabel) {
         var _this = this;
         this.path = path;
         this.canvas = canvas;
         this.eraseButton = eraseButton;
         this.outputLabel = outputLabel;
-        this.logger = logger;
+        this.predictions = [];
+        this.lastDrawPredicted = true;
         this.isLoaded = function () { return _this.modelWasLoaded; };
         this.load = function () { return __awaiter(_this, void 0, void 0, function () {
             var _a;
@@ -62,9 +63,9 @@ var Model = (function () {
                         _a = this;
                         return [4, tf.loadLayersModel(this.path)];
                     case 1:
-                        _a._model = _b.sent();
-                        this.modelWasLoaded = this._model !== undefined;
-                        this.logger.writeLog('Model.load: ' + (this.modelWasLoaded ?
+                        _a.mnet = _b.sent();
+                        this.modelWasLoaded = this.mnet !== undefined;
+                        Logger.getInstance().writeLog('Model.load: ' + (this.modelWasLoaded ?
                             "The model was loaded successfully!" :
                             "Error: The model was not loaded, try to reload the page."));
                         if (this.modelWasLoaded === true) {
@@ -93,7 +94,7 @@ var Model = (function () {
             if (returnDrawing === void 0) { returnDrawing = false; }
             if (save === void 0) { save = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var inputTensor, prediction;
+                var inputTensor, logger, prediction;
                 var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -101,11 +102,12 @@ var Model = (function () {
                             this.outputLabel.write("<<< Analyzing your Drawings >>>");
                             this.eraseButton.disable();
                             inputTensor = this.getInputTensor();
+                            logger = Logger.getInstance();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
                                 this.activateHalt(function () {
                                     _this.eraseButton.enable();
                                     _this.outputLabel.defaultMessage();
-                                    _this.logger.writeLog('Model.analyzeDrawing: ' + (_this.modelWasLoaded ?
+                                    logger.writeLog('Model.analyzeDrawing: ' + (_this.modelWasLoaded ?
                                         'model was not loaded yet, prediction canceled!' :
                                         'user is drawing, prediction canceled!'));
                                 });
@@ -113,14 +115,13 @@ var Model = (function () {
                             else if (inputTensor.sum().dataSync()[0] === 0) {
                                 this.activateHalt(function () {
                                     _this.eraseButton.enable();
-                                    _this.outputLabel.write("<div id='output-text'><strong>TIP</strong>:" +
-                                        "  Click and Hold to draw.<\div>");
-                                    _this.logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
+                                    _this.outputLabel.write("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<div>");
+                                    logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
                                 });
                             }
                             if (!this.checkHalt()) return [3, 1];
                             return [2];
-                        case 1: return [4, (0, sleep)(this.checkLastDrawPredicted() === false ? wait : 0)];
+                        case 1: return [4, sleep(this.checkLastDrawPredicted() === false ? wait : 0)];
                         case 2:
                             _a.sent();
                             this.lastDrawPredicted = true;
@@ -135,38 +136,36 @@ var Model = (function () {
                 });
             });
         };
-        this.makePrediction = function (inputTensor, returnDrawing) {
-            if (returnDrawing === void 0) { returnDrawing = false; }
+        this.makePrediction = function (inputTensor, returnImagePredicted) {
             tf.engine().startScope();
-            var outputTensor = _this._model.predict(inputTensor).dataSync();
+            var outputTensor = _this.mnet.predict(inputTensor).dataSync();
             var predictedValue = tf.argMax(outputTensor).dataSync();
             var predictionValueName = DigitNames[predictedValue];
             var predictionCertainty = tf.max(outputTensor).dataSync();
             tf.engine().endScope();
-            var prediction = {
+            var userInputImage = returnImagePredicted ? inputTensor : undefined;
+            return {
                 name: predictionValueName,
                 value: predictedValue,
                 certainty: predictionCertainty,
-                userDrawing: returnDrawing ?
-                    inputTensor : undefined
+                predictedImage: userInputImage
             };
-            return prediction;
         };
         this.activateHalt = function (postHaltProcedure) {
-            _this.halt = true;
+            _this.__halt = true;
             if (postHaltProcedure !== undefined) {
-                _this.postHaltProcedure = postHaltProcedure;
+                _this.__postHaltProcedure = postHaltProcedure;
             }
         };
         this.deactivateHalt = function () {
-            _this.halt = false;
-            _this.postHaltProcedure = undefined;
+            _this.__halt = false;
+            _this.__postHaltProcedure = undefined;
         };
         this.checkHalt = function () {
-            var halt = _this.halt;
+            var halt = _this.__halt;
             if (halt === true) {
-                if (_this.postHaltProcedure !== undefined) {
-                    _this.postHaltProcedure();
+                if (_this.__postHaltProcedure !== undefined) {
+                    _this.__postHaltProcedure();
                 }
                 _this.deactivateHalt();
             }
@@ -179,10 +178,6 @@ var Model = (function () {
             }
             return lastDrawPredicted;
         };
-        this.predictions = [];
-        this.modelWasLoaded = false;
-        this.halt = false;
-        this.lastDrawPredicted = true;
         var padding = 2;
         var inputSize = 36;
         var shapeSize = inputSize - 2 * padding;

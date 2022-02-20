@@ -1,7 +1,7 @@
-export interface PositionInterface {
-    x: number;
-    y: number;
-    z?: number;
+
+export interface IEventSetter {
+    type: string,
+    listener: EventListenerOrEventListenerObject
 }
 
 
@@ -93,29 +93,39 @@ export class Button extends OutputLabel {
         this.write(this.disableMsg);
     }
 
-    setEvent = (event: string, listener: any) => {
-        this.button.addEventListener(event, listener);
+    setEvent = (event: IEventSetter) => {
+        this.button.addEventListener(event.type, event.listener);
     }
 }
 
-interface LogInterface {
+
+interface ILogMessage {
     time: string;
     message: string;
 }
 
-// TODO: maybe add a section to the logger
-// which can be used to determine which
-// section the log is from.
-export class Logger {
-    static logs: LogInterface[] = [];
+/* This class implements the Singleton design pattern. */
+export class Logger{
+    public static printDebugLogs: boolean = false;
+    private static instance = undefined;
+    static logs: ILogMessage[] = [];
 
-    constructor(public debugMode: boolean) {
-        this.writeLog(`Debug mode ${this.debugMode ? 'enabled' : 'disabled'}.`, false, true);
+    private constructor() {
+        this.writeLog(`Debug mode ${Logger.printDebugLogs ? 'enabled' : 'disabled'}.`, false, true);
+        Logger.instance = this;
+    }
+
+    static getInstance = (): Logger => {
+        if (Logger.instance !== undefined) {
+            return Logger.instance;
+        } else {
+            return new Logger();
+        }
     }
 
     static getTime = (): string => {
-        const zeroPad = (num: number): string =>  
-                      num < 10 ? '0' + num.toString() : num.toString();
+        const zeroPad = (num: number): string =>  num < 10 ?
+            '0' + num.toString() : num.toString();
 
         const date = new Date();
         const hours = zeroPad(date.getHours());
@@ -125,16 +135,16 @@ export class Logger {
         return `${hours}:${minutes}:${seconds}`
     }
 
-    saveLog = (message: string, time: string) => {
-        Logger.logs.push({ time, message });
+    saveLog = (log: ILogMessage) => {
+        Logger.logs.push(log);
     }
 
-    writeLog = (message: string, time: boolean = true, force?: boolean) => {
+    writeLog = (message: string, force: boolean = false, hideTime: boolean = false) => {
         const currentTime = Logger.getTime();
-        const prefix = time ? `[${currentTime}] ` : '';
-        this.saveLog(message, currentTime);
-        if (this.debugMode === true || force === true) {
+        const prefix = hideTime ? '' : `[${currentTime}] `;
+        this.saveLog({ time: currentTime, message: message });
+        if (Logger.printDebugLogs === true || force === true) {
             console.log(`${prefix + message}`);
         }
-    }   
+    }
 }
