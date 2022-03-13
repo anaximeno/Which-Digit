@@ -1,12 +1,12 @@
 import { min , max, IEventSetter } from "./common"
 
 
-interface I2DPosition {
+export interface I2DPosition {
     x: number;
     y: number;
 }
 
-interface ICanvasSize {
+export interface ICanvasSize {
     width: number;
     height: number;
 }
