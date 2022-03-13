@@ -101,43 +101,40 @@ const _Button = Button;
 export { _Button as Button };
 var Logger = (function () {
     function Logger() {
-        var _this = this;
-        this.saveLog = function (log) {
-            Logger.logs.push(log);
-        };
-        this.writeLog = function (message, force, hideTime) {
-            if (force === void 0) { force = false; }
-            if (hideTime === void 0) { hideTime = false; }
-            var currentTime = Logger.getTime();
-            var prefix = hideTime ? '' : "[" + currentTime + "] ";
-            _this.saveLog({ time: currentTime, message: message });
-            if (Logger.printDebugLogs === true || force === true) {
-                console.log("" + (prefix + message));
-            }
-        };
         this.writeLog("Debug mode " + (Logger.printDebugLogs ? 'enabled' : 'disabled') + ".", true, true);
         Logger.instance = this;
     }
+    Logger.getInstance = function () {
+        return Logger.instance ? Logger.instance : new Logger();
+    };
+    Logger.getTime = function () {
+        var zeroLeftPad = function (num) {
+            var str = num;
+            return num < 10 ? '0' + str : str;
+        };
+        var date = new Date();
+        var hours = zeroLeftPad(date.getHours());
+        var minutes = zeroLeftPad(date.getMinutes());
+        var seconds = zeroLeftPad(date.getSeconds());
+        var milisecs = date.getMilliseconds();
+        return hours + ":" + minutes + ":" + seconds + "." + milisecs;
+    };
+    Logger.prototype.saveLog = function (log) {
+        Logger.logs.push(log);
+    };
+    Logger.prototype.writeLog = function (message, force, hideTime) {
+        if (force === void 0) { force = false; }
+        if (hideTime === void 0) { hideTime = false; }
+        var currentTime = Logger.getTime();
+        var prefix = hideTime ? '' : "[" + currentTime + "] ";
+        this.saveLog({ time: currentTime, message: message });
+        if (Logger.printDebugLogs === true || force === true) {
+            console.log("" + (prefix + message));
+        }
+    };
     Logger.printDebugLogs = false;
     Logger.instance = undefined;
     Logger.logs = [];
-    Logger.getInstance = function () {
-        if (Logger.instance !== undefined) {
-            return Logger.instance;
-        }
-        else {
-            return new Logger();
-        }
-    };
-    Logger.getTime = function () {
-        var zeroPad = function (num) { return num < 10 ?
-            '0' + num.toString() : num.toString(); };
-        var date = new Date();
-        var hours = zeroPad(date.getHours());
-        var minutes = zeroPad(date.getMinutes());
-        var seconds = zeroPad(date.getSeconds());
-        return hours + ":" + minutes + ":" + seconds;
-    };
     return Logger;
 }());
 const _Logger = Logger;
