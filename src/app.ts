@@ -1,29 +1,45 @@
 import { Canvas } from './canvas';
-import { Logger, OutputLabel, Button, sleep, max } from './common';
-import { Model, IPrediction } from './model'
+import { Model } from './model';
+import { max, sleep } from './common';
 
+import {
+    Logger,
+    Button,
+    OutputLabel
+} from './common';
 
-interface IAppSettings {
-    sleepTimeOnMouseOut: number;
-    sleepTimeOnMouseUp: number;
-    pageMarginIncrease: number;
-};
+import {
+    IAppSettings,
+    IPrediction
+} from './types';
+
 
 
 export class App {
-    private settings: IAppSettings;
+    private readonly canvas: Canvas;
+    private readonly eraser: Button;
+    private readonly outSection: OutputLabel;
+    private readonly model: Model;
+    private readonly log: Logger;
 
-    constructor(
-        private readonly model: Model,
-        private readonly canvas: Canvas,
-        private readonly outLabel: OutputLabel,
-        private readonly eraseButton: Button,
-    ) { 
-        this.settings  = {
-            sleepTimeOnMouseOut: 1500,
-            sleepTimeOnMouseUp: 1350,
-            pageMarginIncrease: 300
-        };
+    constructor(private settings: IAppSettings) { 
+        this.log = Logger.getInstance();
+
+        this.eraser = new Button('erase-btn', 'Clear', 'Please wait');
+
+        this.outSection = new OutputLabel(
+            'output', 
+            `<div id='output-text'>
+                Draw any digit between <strong>0</strong> to <strong>9</strong>
+            <\div>`
+        );
+
+        const { canvasSettings, modelSettings } = this.settings;
+        const { canvasSize: width, ctxSize } = canvasSettings;
+        const height = width;
+
+        this.canvas = new Canvas('draw-canvas', { width, height }, ctxSize);
+        this.model = new Model(modelSettings, this.canvas, this.eraser, this.outSection);
     }
 
     protected initializeCanvasEvents = (sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350) => {
@@ -51,7 +67,7 @@ export class App {
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseOut);
                 if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing(150, false));
+                    this.showResults(await this.model.analyzeDrawing());
                 }
             }
         });
@@ -79,7 +95,7 @@ export class App {
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseUp);
                 if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing(150, false));
+                    this.showResults(await this.model.analyzeDrawing());
                 }
             }
         });
@@ -126,7 +142,7 @@ export class App {
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseUp);
                 if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing(150, false));
+                    this.showResults(await this.model.analyzeDrawing());
                 }
             }
         });
@@ -137,15 +153,15 @@ export class App {
             let {name, value, certainty, ..._} = prediction; 
             const prob = Number((certainty * 100).toFixed(2));
 
-            this.outLabel.write(`
+            this.outSection.write(`
                 <div id='output-text'>
                     The number drawn is <strong>${value}</strong> (<strong>${name}</strong>)
                 <\div>`
             );
 
-            Logger.getInstance().writeLog(`Prediction: ${value}  (certainty = ${prob}%)`);
+            this.log.writeLog(`Prediction: ${value}  (certainty = ${prob}%)`);
         } else {
-            Logger.getInstance().writeLog('App.showResults: called without prediction to show.');
+            this.log.writeLog('App.showResults: called without prediction to show.');
         }
     }
 
@@ -154,44 +170,46 @@ export class App {
         const output = document.getElementById('output');
         const pipe = document.getElementById('pipeline');
         const main = document.getElementsByTagName('html')[0];
-    
         const size = this.canvas.idealCanvasSize();
-    
-        main.style.height = max(innerH, pageMarginIncrease + size).toString() + "px";
-        output.style.width = size.toString() + "px"
+        const maxValue = <unknown>max(innerH, pageMarginIncrease + size) as string;
+
+        main.style.height = maxValue + "px";
+        output.style.width = <unknown>size as string + "px"
         pipe.style.width = output.style.width;
     
         this.canvas.resize();
     }
 
-    run = (definition?: IAppSettings) => {
-        if (definition !== undefined) { this.settings = definition; }
-        const { sleepTimeOnMouseOut, sleepTimeOnMouseUp, pageMarginIncrease } = this.settings;
-        const logger = Logger.getInstance();
-
-        this.eraseButton.setEvent({
+    run = () => {        
+        this.eraser.setEvent({
             type: 'click',
             listener: () => {
                 this.canvas.clear();
                 this.model.activateHalt(() => {
-                    logger.writeLog("App: clear button clicked, canceled prediction!");
+                    this.log.writeLog(
+                        "App: clear button clicked, canceled prediction!"
+                        );
                 });
                 if (this.model.isLoaded() === true) {
-                    this.outLabel.defaultMessage();
+                    this.outSection.defaultMessage();
                 }
             }
         });
 
         window.addEventListener('resize', () => {
-            this.resizeTheEntirePage(pageMarginIncrease);
+            this.resizeTheEntirePage();
             if (this.model.isLoaded() === true) {
-                this.outLabel.defaultMessage();
+                this.outSection.defaultMessage();
             }
         });
 
-        this.initializeCanvasEvents(sleepTimeOnMouseOut, sleepTimeOnMouseUp);
-        this.resizeTheEntirePage(pageMarginIncrease);
+        const { onUp, onOut } = this.settings.mouseTimeSettings;
+
+        this.initializeCanvasEvents(onOut, onUp);
+        this.resizeTheEntirePage();
         this.model.load();
-        logger.writeLog('App: Running the Digit Recognition Web App!');
+        this.log.writeLog(
+            'App: Running the Digit Recognition Web App!'
+            );
     }
 };

@@ -1,8 +1,7 @@
-
-export interface IEventSetter {
-    type: string,
-    listener: EventListenerOrEventListenerObject
-}
+import {
+    IEventSetter,
+    ILogMessage
+} from './types';
 
 
 export const min = (...args: number[]): number => {
@@ -47,9 +46,9 @@ export const max = (...args: number[]): number => {
 }
 
 
-export const sleep = (milisecs: number): Promise<unknown> =>
-                    new Promise(resolve => setTimeout(resolve, milisecs));
-
+export const sleep = (milisecs: number): Promise<unknown> => {
+    return new Promise(resolve => setTimeout(resolve, milisecs));
+}
 
 export class OutputLabel {
     protected readonly element: HTMLElement;
@@ -99,11 +98,6 @@ export class Button extends OutputLabel {
 }
 
 
-interface ILogMessage {
-    time: string;
-    message: string;
-}
-
 /* This class implements the Singleton design pattern. */
 export class Logger{
     public static printDebugLogs: boolean = false;
@@ -111,35 +105,36 @@ export class Logger{
     static logs: ILogMessage[] = [];
 
     private constructor() {
-        this.writeLog(`Debug mode ${Logger.printDebugLogs ? 'enabled' : 'disabled'}.`, true, true);
+        this.writeLog(
+            `Debug mode ${Logger.printDebugLogs ? 'enabled' : 'disabled'}.`,
+            true, true);
         Logger.instance = this;
     }
 
-    static getInstance = (): Logger => {
-        if (Logger.instance !== undefined) {
-            return Logger.instance;
-        } else {
-            return new Logger();
-        }
+    static getInstance(): Logger {
+        return Logger.instance ? Logger.instance : new Logger();
     }
 
-    static getTime = (): string => {
-        const zeroPad = (num: number): string =>  num < 10 ?
-            '0' + num.toString() : num.toString();
+    static getTime(): string {
+        const zeroLeftPad = (num: number): string => {
+            const str = <unknown>num as string;
+            return num < 10 ?  '0'+str : str;
+        }
 
         const date = new Date();
-        const hours = zeroPad(date.getHours());
-        const minutes = zeroPad(date.getMinutes());
-        const seconds = zeroPad(date.getSeconds());
+        const hours = zeroLeftPad(date.getHours());
+        const minutes = zeroLeftPad(date.getMinutes());
+        const seconds = zeroLeftPad(date.getSeconds());
+        const milisecs = date.getMilliseconds();
 
-        return `${hours}:${minutes}:${seconds}`
+        return `${hours}:${minutes}:${seconds}.${milisecs}`
     }
 
-    saveLog = (log: ILogMessage) => {
+    saveLog(log: ILogMessage) {
         Logger.logs.push(log);
     }
 
-    writeLog = (message: string, force: boolean = false, hideTime: boolean = false) => {
+    writeLog(message: string, force: boolean = false, hideTime: boolean = false) {
         const currentTime = Logger.getTime();
         const prefix = hideTime ? '' : `[${currentTime}] `;
         this.saveLog({ time: currentTime, message: message });

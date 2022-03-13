@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 export const __esModule = true;
 import { Logger, sleep } from "./common.js";
+var INPUT_SIZE = 36;
 var DigitNames = {
     0: 'Zero', 1: 'One',
     2: 'Two', 3: 'Three',
@@ -45,13 +46,12 @@ var DigitNames = {
     8: 'Eight', 9: 'Nine'
 };
 var Model = (function () {
-    function Model(path, canvas, eraseButton, outputLabel) {
+    function Model(settings, canvas, eraseButton, outputLabel) {
         var _this = this;
-        this.path = path;
+        this.settings = settings;
         this.canvas = canvas;
         this.eraseButton = eraseButton;
         this.outputLabel = outputLabel;
-        this.predictions = [];
         this.lastDrawPredicted = true;
         this.isLoaded = function () { return _this.modelWasLoaded; };
         this.load = function () { return __awaiter(_this, void 0, void 0, function () {
@@ -69,7 +69,7 @@ var Model = (function () {
                             "The model was loaded successfully!" :
                             "Error: The model was not loaded, try to reload the page."));
                         if (this.modelWasLoaded === true) {
-                            this.makePrediction(this.getInputTensor());
+                            this.predict(this.getInputTensor());
                             this.canvas.getCanvasElement().style.cursor = 'crosshair';
                             this.eraseButton.enable();
                             this.outputLabel.defaultMessage();
@@ -89,18 +89,16 @@ var Model = (function () {
                 .toFloat()
                 .div(255.0);
         };
-        this.analyzeDrawing = function (wait, returnDrawing, save) {
-            if (wait === void 0) { wait = 150; }
-            if (returnDrawing === void 0) { returnDrawing = false; }
+        this.analyzeDrawing = function (save) {
             if (save === void 0) { save = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var inputTensor, logger, prediction;
+                var inputTensor, logger, sleepInterval, prediction;
                 var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            this.outputLabel.write("<<< Analyzing your Drawings >>>");
                             this.eraseButton.disable();
+                            this.outputLabel.write("Analyzing.");
                             inputTensor = this.getInputTensor();
                             logger = Logger.getInstance();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
@@ -119,36 +117,40 @@ var Model = (function () {
                                     logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
                                 });
                             }
-                            if (!this.checkHalt()) return [3, 1];
-                            return [2];
-                        case 1: return [4, sleep(this.checkLastDrawPredicted() === false ? wait : 0)];
-                        case 2:
+                            if (!!this.checkHalt()) return [3, 3];
+                            sleepInterval = this.settings.sleepMilisecsOnPrediction;
+                            if (!!this.checkLastDrawPredicted()) return [3, 2];
+                            this.outputLabel.write("Analyzing..");
+                            return [4, sleep(sleepInterval)];
+                        case 1:
                             _a.sent();
+                            _a.label = 2;
+                        case 2:
                             this.lastDrawPredicted = true;
-                            prediction = this.makePrediction(inputTensor, returnDrawing);
+                            prediction = this.predict(inputTensor);
+                            this.outputLabel.write("Analyzing...");
                             if (save === true) {
                                 this.predictions.push(prediction);
                             }
-                            this.outputLabel.write("Analysis finished.");
+                            this.outputLabel.write("Got the results!");
                             this.eraseButton.enable();
                             return [2, prediction];
+                        case 3: return [2];
                     }
                 });
             });
         };
-        this.makePrediction = function (inputTensor, returnImagePredicted) {
+        this.predict = function (inputTensor) {
             tf.engine().startScope();
             var outputTensor = _this.mnet.predict(inputTensor).dataSync();
             var predictedValue = tf.argMax(outputTensor).dataSync();
             var predictionValueName = DigitNames[predictedValue];
             var predictionCertainty = tf.max(outputTensor).dataSync();
             tf.engine().endScope();
-            var userInputImage = returnImagePredicted ? inputTensor : undefined;
             return {
                 name: predictionValueName,
                 value: predictedValue,
-                certainty: predictionCertainty,
-                predictedImage: userInputImage
+                certainty: predictionCertainty
             };
         };
         this.activateHalt = function (postHaltProcedure) {
@@ -178,14 +180,15 @@ var Model = (function () {
             }
             return lastDrawPredicted;
         };
-        var padding = 2;
-        var inputSize = 36;
-        var shapeSize = inputSize - 2 * padding;
-        this.inputShape = [shapeSize, shapeSize];
+        var _a = this.settings, padding = _a.padding, path = _a.path;
+        var size = INPUT_SIZE - 2 * padding;
+        this.inputShape = [size, size];
         this.paddingShape = [
             [padding, padding],
             [padding, padding]
         ];
+        this.path = path;
+        this.predictions = [];
     }
     return Model;
 }());

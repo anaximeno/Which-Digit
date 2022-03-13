@@ -3,13 +3,14 @@ import { OutputLabel } from './common';
 import { Logger, sleep } from './common';
 import { Canvas } from './canvas';
 
+import  {
+    IPrediction,
+    IModelSettings,
+    ModelPaddingType
+} from './types';
 
-export interface IPrediction {
-    value: number;
-    name: string;
-    certainty: number;
-    predictedImage?: any; // tf tensor output type
-}
+
+const INPUT_SIZE = 36;
 
 
 const DigitNames = {
@@ -22,29 +23,37 @@ const DigitNames = {
 
 
 export class Model {
-    private mnet?: any;
+    private mnet: any;
+    private predictions: IPrediction[];
     private readonly inputShape: number[];
     private readonly paddingShape: number[][];
-    private predictions: IPrediction[] = [];
+    private readonly path: string;
+    private modelWasLoaded: boolean;
+
+    private __postHaltProcedure: Function;
+    private __halt: boolean;
+
     public lastDrawPredicted: boolean = true;
-    private modelWasLoaded?: boolean;
-    private __postHaltProcedure?: Function;
-    private __halt?: boolean;
 
     constructor(
-        private readonly path: string,
+        private readonly settings: IModelSettings,
         private readonly canvas: Canvas,
         private readonly eraseButton: Button,
         private readonly outputLabel: OutputLabel,
     ) {
-        const padding = 2;
-        const inputSize = 36; 
-        const shapeSize = inputSize - 2 * padding;
-        this.inputShape = [shapeSize, shapeSize];
+        const { padding, path } = this.settings;
+
+        const size = INPUT_SIZE - 2 * padding;
+
+        this.inputShape = [size, size];
+
         this.paddingShape = [
             [padding, padding],
             [padding, padding]
         ];
+
+        this.path = path;
+        this.predictions = [];
     }
 
     isLoaded = (): boolean => this.modelWasLoaded;
@@ -60,7 +69,7 @@ export class Model {
         if (this.modelWasLoaded === true) {
             // Predict the empty canvas at least one time,
             // because the first prediction is the slowest one.
-            this.makePrediction(this.getInputTensor());
+            this.predict(this.getInputTensor());
             this.canvas.getCanvasElement().style.cursor = 'crosshair';
             this.eraseButton.enable();
             this.outputLabel.defaultMessage();
@@ -79,9 +88,10 @@ export class Model {
             .div(255.0);
     }
 
-    analyzeDrawing = async (wait: number = 150, returnDrawing: boolean = false, save: boolean = false): Promise<IPrediction> => {
-        this.outputLabel.write("<<< Analyzing your Drawings >>>");
+    analyzeDrawing = async (save: boolean = false): Promise<IPrediction> => {
         this.eraseButton.disable();
+        this.outputLabel.write("Analyzing.");
+
 
         const inputTensor = this.getInputTensor();
         const logger = Logger.getInstance();
@@ -103,20 +113,27 @@ export class Model {
             });
         }
 
-        if (this.checkHalt()) {
-            return ;
-        } else {
-            await sleep(this.checkLastDrawPredicted() === false ? wait : 0);
+        if (!this.checkHalt()) {
+            const sleepInterval = this.settings.sleepMilisecsOnPrediction;
+
+            if (!this.checkLastDrawPredicted()) {
+                this.outputLabel.write("Analyzing..");
+                await sleep(sleepInterval);
+            }
+
             this.lastDrawPredicted = true;
-            const prediction = this.makePrediction(inputTensor, returnDrawing);
+            const prediction = this.predict(inputTensor);
+
+            this.outputLabel.write("Analyzing...");
+
             if (save === true) { this.predictions.push(prediction); }
-            this.outputLabel.write("Analysis finished.");
+            this.outputLabel.write("Got the results!");
             this.eraseButton.enable();
             return prediction;
         }
     }
 
-    private makePrediction = <T>(inputTensor: T, returnImagePredicted?: boolean): IPrediction => {
+    private predict = <T>(inputTensor: T): IPrediction => {
         // This prevents high usage of GPU
         tf.engine().startScope();
         const outputTensor = this.mnet.predict(inputTensor).dataSync();
@@ -124,14 +141,11 @@ export class Model {
         const predictionValueName = DigitNames[predictedValue];
         const predictionCertainty = tf.max(outputTensor).dataSync();
         tf.engine().endScope();
-        const userInputImage: T = returnImagePredicted ? inputTensor : undefined;
-
 
         return {
             name: predictionValueName,
             value: predictedValue,
             certainty: predictionCertainty,
-            predictedImage: userInputImage
         }
     }
 
