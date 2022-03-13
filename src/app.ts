@@ -1,28 +1,22 @@
-import * as canvas from './canvas';
-import { Logger, OutputLabel, Button, sleep, max } from './common';
-import { Model, IPrediction } from './model'
+import { Canvas } from './canvas';
+import { Model } from './model';
+import { max, sleep } from './common';
 
+import {
+    Logger,
+    Button,
+    OutputLabel
+} from './common';
 
-export interface ICanvasSettings {
-    canvasSize: number;
-    ctxSize: number;
-}
+import {
+    IAppSettings,
+    IPrediction
+} from './types';
 
-
-export interface IMouseTimeSettings {
-    onOut: number;
-    onUp: number;
-}
-
-
-export interface IAppSettings {
-    canvasSettings: ICanvasSettings;
-    mouseTimeSettings: IMouseTimeSettings;
-};
 
 
 export class App {
-    private readonly canvas: canvas.Canvas;
+    private readonly canvas: Canvas;
     private readonly eraser: Button;
     private readonly outSection: OutputLabel;
     private readonly model: Model;
@@ -40,20 +34,19 @@ export class App {
 
         const { canvasSize, ctxSize } = this.settings.canvasSettings;
 
-        this.canvas = new canvas.Canvas(
+        this.canvas = new Canvas(
             'draw-canvas',
-            {
-                width: canvasSize,
-                height: canvasSize
-            },
+            { width: canvasSize,
+              height: canvasSize },
             ctxSize
         );
 
+
         this.model = new Model(
+            this.settings.imagePadding,
             './data/compiled/model.json',
             this.canvas, this.eraser,
-            this.outSection
-        );
+            this.outSection);
 
         this.log = Logger.getInstance();
     }

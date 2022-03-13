@@ -13,7 +13,8 @@ import { App } from "./app";
         mouseTimeSettings: {
             onOut: 1500,
             onUp: 1350
-        }
+        },
+        imagePadding: 1,
     });
 
     app.run();

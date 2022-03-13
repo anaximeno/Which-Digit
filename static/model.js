@@ -45,8 +45,9 @@ var DigitNames = {
     8: 'Eight', 9: 'Nine'
 };
 var Model = (function () {
-    function Model(path, canvas, eraseButton, outputLabel) {
+    function Model(padding, path, canvas, eraseButton, outputLabel) {
         var _this = this;
+        this.padding = padding;
         this.path = path;
         this.canvas = canvas;
         this.eraseButton = eraseButton;
@@ -178,13 +179,12 @@ var Model = (function () {
             }
             return lastDrawPredicted;
         };
-        var padding = 2;
-        var inputSize = 36;
-        var shapeSize = inputSize - 2 * padding;
+        var MODEL_INPUT_SIZE = 36;
+        var shapeSize = MODEL_INPUT_SIZE - 2 * this.padding;
         this.inputShape = [shapeSize, shapeSize];
         this.paddingShape = [
-            [padding, padding],
-            [padding, padding]
+            [this.padding, this.padding],
+            [this.padding, this.padding]
         ];
     }
     return Model;

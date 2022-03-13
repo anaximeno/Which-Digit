@@ -1,7 +1,7 @@
-export interface IEventSetter {
-    type: string,
-    listener: EventListenerOrEventListenerObject
-}
+import {
+    IEventSetter,
+    ILogMessage
+} from './types';
 
 
 export const min = (...args: number[]): number => {
@@ -97,11 +97,6 @@ export class Button extends OutputLabel {
     }
 }
 
-
-interface ILogMessage {
-    time: string;
-    message: string;
-}
 
 /* This class implements the Singleton design pattern. */
 export class Logger{

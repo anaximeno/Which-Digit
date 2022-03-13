@@ -1,18 +1,14 @@
-import { min , max, IEventSetter } from "./common"
+import { min, max } from "./common"
+
+import {
+    I2DPosition,
+    ICanvasSize,
+    IEventSetter
+} from './types';
 
 
-export interface I2DPosition {
-    x: number;
-    y: number;
-}
-
-export interface ICanvasSize {
-    width: number;
-    height: number;
-}
-
-
-// default export was not used on purpose
+// NOTE: Default export was not used due to error in compilation time
+// when using it.
 export class Canvas {
     protected readonly canvasElement: HTMLCanvasElement;
     private readonly ctxElement: CanvasRenderingContext2D;

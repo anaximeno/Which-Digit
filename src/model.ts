@@ -3,13 +3,10 @@ import { OutputLabel } from './common';
 import { Logger, sleep } from './common';
 import { Canvas } from './canvas';
 
-
-export interface IPrediction {
-    value: number;
-    name: string;
-    certainty: number;
-    predictedImage?: any; // tf tensor output type
-}
+import  {
+    IPrediction,
+    IModelPadding
+} from './types';
 
 
 const DigitNames = {
@@ -26,24 +23,25 @@ export class Model {
     private readonly inputShape: number[];
     private readonly paddingShape: number[][];
     private predictions: IPrediction[] = [];
-    public lastDrawPredicted: boolean = true;
     private modelWasLoaded?: boolean;
     private __postHaltProcedure?: Function;
     private __halt?: boolean;
+    
+    public lastDrawPredicted: boolean = true;
 
     constructor(
+        private readonly padding: IModelPadding,
         private readonly path: string,
         private readonly canvas: Canvas,
         private readonly eraseButton: Button,
         private readonly outputLabel: OutputLabel,
     ) {
-        const padding = 2;
-        const inputSize = 36; 
-        const shapeSize = inputSize - 2 * padding;
+        const MODEL_INPUT_SIZE = 36;
+        const shapeSize = MODEL_INPUT_SIZE - 2 * this.padding;
         this.inputShape = [shapeSize, shapeSize];
         this.paddingShape = [
-            [padding, padding],
-            [padding, padding]
+            [this.padding, this.padding],
+            [this.padding, this.padding]
         ];
     }
 
