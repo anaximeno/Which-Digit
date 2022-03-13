@@ -50,7 +50,7 @@ export const __esModule = true;
 import { Canvas } from "./canvas.js";
 import { Model } from "./model.js";
 import { sleep, max } from "./common.js";
-import { Button, OutputLabel, Logger } from "./common.js";
+import { Logger, Button, OutputLabel } from "./common.js";
 var App = (function () {
     function App(settings) {
         var _this = this;
@@ -87,7 +87,7 @@ var App = (function () {
                                 _b.sent();
                                 if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
                                 _a = this.showResults;
-                                return [4, this.model.analyzeDrawing(150, false)];
+                                return [4, this.model.analyzeDrawing()];
                             case 2:
                                 _a.apply(this, [_b.sent()]);
                                 _b.label = 3;
@@ -125,7 +125,7 @@ var App = (function () {
                                 _b.sent();
                                 if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
                                 _a = this.showResults;
-                                return [4, this.model.analyzeDrawing(150, false)];
+                                return [4, this.model.analyzeDrawing()];
                             case 2:
                                 _a.apply(this, [_b.sent()]);
                                 _b.label = 3;
@@ -181,7 +181,7 @@ var App = (function () {
                                 _b.sent();
                                 if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
                                 _a = this.showResults;
-                                return [4, this.model.analyzeDrawing(150, false)];
+                                return [4, this.model.analyzeDrawing()];
                             case 2:
                                 _a.apply(this, [_b.sent()]);
                                 _b.label = 3;
@@ -240,13 +240,14 @@ var App = (function () {
             _this.model.load();
             _this.log.writeLog('App: Running the Digit Recognition Web App!');
         };
+        this.log = Logger.getInstance();
         this.eraser = new Button('erase-btn', 'Clear', 'Please wait');
         this.outSection = new OutputLabel('output', "<div id='output-text'>\n                Draw any digit between <strong>0</strong> to <strong>9</strong>\n            <div>");
-        var _a = this.settings.canvasSettings, canvasSize = _a.canvasSize, ctxSize = _a.ctxSize;
-        this.canvas = new Canvas('draw-canvas', { width: canvasSize,
-            height: canvasSize }, ctxSize);
-        this.model = new Model(this.settings.imagePadding, './data/compiled/model.json', this.canvas, this.eraser, this.outSection);
-        this.log = Logger.getInstance();
+        var _a = this.settings, canvasSettings = _a.canvasSettings, modelSettings = _a.modelSettings;
+        var width = canvasSettings.canvasSize, ctxSize = canvasSettings.ctxSize;
+        var height = width;
+        this.canvas = new Canvas('draw-canvas', { width: width, height: height }, ctxSize);
+        this.model = new Model(modelSettings, this.canvas, this.eraser, this.outSection);
     }
     return App;
 }());

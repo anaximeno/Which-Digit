@@ -6,25 +6,31 @@ export interface IPrediction {
 };
 
 
-export type IModelPadding = 0 | 1 | 2 | 3 | 4;
+export type ModelPaddingType = 0 | 1 | 2 | 3 | 4;
 
+
+export interface IModelSettings {
+    sleepMilisecsOnPrediction: number;
+    padding: ModelPaddingType;
+    path: string;
+};
 
 export interface ICanvasSettings {
     canvasSize: number;
     ctxSize: number;
-}
+};
 
 
 export interface IMouseTimeSettings {
     onOut: number;
     onUp: number;
-}
+};
 
 
 export interface IAppSettings {
-    canvasSettings: ICanvasSettings;
     mouseTimeSettings: IMouseTimeSettings;
-    imagePadding: IModelPadding;
+    canvasSettings: ICanvasSettings;
+    modelSettings: IModelSettings;
 };
 
 

@@ -23,6 +23,8 @@ export class App {
     private readonly log: Logger;
 
     constructor(private settings: IAppSettings) { 
+        this.log = Logger.getInstance();
+
         this.eraser = new Button('erase-btn', 'Clear', 'Please wait');
 
         this.outSection = new OutputLabel(
@@ -32,23 +34,12 @@ export class App {
             <\div>`
         );
 
-        const { canvasSize, ctxSize } = this.settings.canvasSettings;
+        const { canvasSettings, modelSettings } = this.settings;
+        const { canvasSize: width, ctxSize } = canvasSettings;
+        const height = width;
 
-        this.canvas = new Canvas(
-            'draw-canvas',
-            { width: canvasSize,
-              height: canvasSize },
-            ctxSize
-        );
-
-
-        this.model = new Model(
-            this.settings.imagePadding,
-            './data/compiled/model.json',
-            this.canvas, this.eraser,
-            this.outSection);
-
-        this.log = Logger.getInstance();
+        this.canvas = new Canvas('draw-canvas', { width, height }, ctxSize);
+        this.model = new Model(modelSettings, this.canvas, this.eraser, this.outSection);
     }
 
     protected initializeCanvasEvents = (sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350) => {
@@ -76,7 +67,7 @@ export class App {
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseOut);
                 if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing(150, false));
+                    this.showResults(await this.model.analyzeDrawing());
                 }
             }
         });
@@ -104,7 +95,7 @@ export class App {
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseUp);
                 if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing(150, false));
+                    this.showResults(await this.model.analyzeDrawing());
                 }
             }
         });
@@ -151,7 +142,7 @@ export class App {
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseUp);
                 if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing(150, false));
+                    this.showResults(await this.model.analyzeDrawing());
                 }
             }
         });
