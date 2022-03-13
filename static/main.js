@@ -3,7 +3,7 @@ export const __esModule = true;
 import { Logger } from "./common.js";
 import { App } from "./app.js";
 (function () {
-    Logger.printDebugLogs = true;
+    Logger.printDebugLogs = false;
     var app = new App({
         modelSettings: {
             path: 'data/compiled/model.json',

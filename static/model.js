@@ -97,8 +97,8 @@ var Model = (function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            this.outputLabel.write("<<< Analyzing your Drawings >>>");
                             this.eraseButton.disable();
+                            this.outputLabel.write("Analyzing.");
                             inputTensor = this.getInputTensor();
                             logger = Logger.getInstance();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
@@ -117,20 +117,25 @@ var Model = (function () {
                                     logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
                                 });
                             }
-                            if (!!this.checkHalt()) return [3, 2];
+                            if (!!this.checkHalt()) return [3, 3];
                             sleepInterval = this.settings.sleepMilisecsOnPrediction;
-                            return [4, sleep(this.checkLastDrawPredicted() === false ? sleepInterval : 0)];
+                            if (!!this.checkLastDrawPredicted()) return [3, 2];
+                            this.outputLabel.write("Analyzing..");
+                            return [4, sleep(sleepInterval)];
                         case 1:
                             _a.sent();
+                            _a.label = 2;
+                        case 2:
                             this.lastDrawPredicted = true;
                             prediction = this.predict(inputTensor);
+                            this.outputLabel.write("Analyzing...");
                             if (save === true) {
                                 this.predictions.push(prediction);
                             }
-                            this.outputLabel.write("Analysis finished.");
+                            this.outputLabel.write("Got the results!");
                             this.eraseButton.enable();
                             return [2, prediction];
-                        case 2: return [2];
+                        case 3: return [2];
                     }
                 });
             });

@@ -90,6 +90,8 @@ export class Model {
 
     analyzeDrawing = async (save: boolean = false): Promise<IPrediction> => {
         this.eraseButton.disable();
+        this.outputLabel.write("Analyzing.");
+
 
         const inputTensor = this.getInputTensor();
         const logger = Logger.getInstance();
@@ -113,11 +115,19 @@ export class Model {
 
         if (!this.checkHalt()) {
             const sleepInterval = this.settings.sleepMilisecsOnPrediction;
-            await sleep(this.checkLastDrawPredicted() === false ? sleepInterval : 0);
+
+            if (!this.checkLastDrawPredicted()) {
+                this.outputLabel.write("Analyzing..");
+                await sleep(sleepInterval);
+            }
+
             this.lastDrawPredicted = true;
             const prediction = this.predict(inputTensor);
+
+            this.outputLabel.write("Analyzing...");
+
             if (save === true) { this.predictions.push(prediction); }
-            this.outputLabel.write("Analysis finished.");
+            this.outputLabel.write("Got the results!");
             this.eraseButton.enable();
             return prediction;
         }
