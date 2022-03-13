@@ -18,85 +18,56 @@ export function min () {
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    var minimun;
-    switch (args.length) {
-        case 0:
-            minimun = -Infinity;
-            break;
-        case 1:
-            minimun = args[0];
-            break;
-        default:
-            minimun = args[0];
-            for (var i = 1; i < args.length; ++i)
-                minimun = minimun > args[i] ? args[i] : minimun;
-            break;
-    }
-    return minimun;
+    return args.reduce(function (a, b) { return a < b ? a : b; });
 }
 export function max () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    var maximum;
-    switch (args.length) {
-        case 0:
-            maximum = Infinity;
-            break;
-        case 1:
-            maximum = args[0];
-            break;
-        default:
-            maximum = args[0];
-            for (var i = 1; i < args.length; ++i)
-                maximum = maximum < args[i] ? args[i] : maximum;
-            break;
-    }
-    return maximum;
+    return args.reduce(function (a, b) { return a > b ? a : b; });
 }
 export function sleep (milisecs) {
     return new Promise(function (resolve) { return setTimeout(resolve, milisecs); });
 }
-var OutputLabel = (function () {
-    function OutputLabel(selector, defaultMsg) {
-        var _this = this;
+var OutputSection = (function () {
+    function OutputSection(selector, defaultMsg) {
         this.selector = selector;
         this.defaultMsg = defaultMsg;
-        this.write = function (message) {
-            _this.element.innerHTML = message;
-        };
-        this.defaultMessage = function () {
-            _this.write(_this.defaultMsg);
-        };
         this.element = document.getElementById(this.selector);
     }
-    return OutputLabel;
+    OutputSection.prototype.write = function (message) {
+        this.element.innerHTML = message;
+    };
+    OutputSection.prototype.defaultMessage = function () {
+        this.write(this.defaultMsg);
+    };
+    return OutputSection;
 }());
-const _OutputLabel = OutputLabel;
-export { _OutputLabel as OutputLabel };
+const _OutputSection = OutputSection;
+export { _OutputSection as OutputSection };
 ;
 var Button = (function (_super) {
     __extends(Button, _super);
     function Button(selector, defaultMsg, disableMsg) {
         var _this = _super.call(this, selector, defaultMsg) || this;
         _this.disableMsg = disableMsg;
-        _this.enable = function () {
-            _this.button.disabled = false;
-            _this.defaultMessage();
-        };
-        _this.disable = function () {
-            _this.button.disabled = true;
-            _this.write(_this.disableMsg);
-        };
-        _this.setEvent = function (event) {
-            _this.button.addEventListener(event.type, event.listener);
-        };
         _this.button = _this.element;
         return _this;
     }
+    Button.prototype.enable = function () {
+        this.button.disabled = false;
+        this.defaultMessage();
+    };
+    Button.prototype.disable = function () {
+        this.button.disabled = true;
+        this.write(this.disableMsg);
+    };
+    Button.prototype.setEvent = function (event) {
+        this.button.addEventListener(event.type, event.listener);
+    };
     return Button;
-}(OutputLabel));
+}(OutputSection));
 const _Button = Button;
 export { _Button as Button };
 var Logger = (function () {

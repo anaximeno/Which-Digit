@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 export const __esModule = true;
-import { Logger, sleep } from "./common.js";
+import { sleep, Logger } from "./common.js";
 var INPUT_SIZE = 36;
 var DigitNames = {
     0: 'Zero', 1: 'One',
@@ -65,7 +65,7 @@ var Model = (function () {
                     case 1:
                         _a.mnet = _b.sent();
                         this.modelWasLoaded = this.mnet !== undefined;
-                        Logger.getInstance().writeLog('Model.load: ' + (this.modelWasLoaded ?
+                        this.log.writeLog('Model.load: ' + (this.modelWasLoaded ?
                             "The model was loaded successfully!" :
                             "Error: The model was not loaded, try to reload the page."));
                         if (this.modelWasLoaded === true) {
@@ -92,7 +92,7 @@ var Model = (function () {
         this.analyzeDrawing = function (save) {
             if (save === void 0) { save = false; }
             return __awaiter(_this, void 0, void 0, function () {
-                var inputTensor, logger, sleepInterval, prediction;
+                var inputTensor, sleepInterval, prediction;
                 var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -100,12 +100,11 @@ var Model = (function () {
                             this.eraseButton.disable();
                             this.outputLabel.write("Analyzing.");
                             inputTensor = this.getInputTensor();
-                            logger = Logger.getInstance();
                             if (this.modelWasLoaded === false || this.canvas.drawing === true) {
                                 this.activateHalt(function () {
                                     _this.eraseButton.enable();
                                     _this.outputLabel.defaultMessage();
-                                    logger.writeLog('Model.analyzeDrawing: ' + (_this.modelWasLoaded ?
+                                    _this.log.writeLog('Model.analyzeDrawing: ' + (_this.modelWasLoaded ?
                                         'model was not loaded yet, prediction canceled!' :
                                         'user is drawing, prediction canceled!'));
                                 });
@@ -114,7 +113,7 @@ var Model = (function () {
                                 this.activateHalt(function () {
                                     _this.eraseButton.enable();
                                     _this.outputLabel.write("<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<div>");
-                                    logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
+                                    _this.log.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
                                 });
                             }
                             if (!!this.checkHalt()) return [3, 3];
@@ -189,6 +188,7 @@ var Model = (function () {
         ];
         this.path = path;
         this.predictions = [];
+        this.log = Logger.getInstance();
     }
     return Model;
 }());
