@@ -50,205 +50,213 @@ export const __esModule = true;
 import { Canvas } from "./canvas.js";
 import { Model } from "./model.js";
 import { sleep, max } from "./common.js";
-import { Logger, Button, OutputLabel } from "./common.js";
+import { Logger, Button, OutputSection } from "./common.js";
 var App = (function () {
     function App(settings) {
-        var _this = this;
         this.settings = settings;
-        this.initializeCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
-            if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
-            if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
-            var _canvas = _this.canvas.getCanvasElement();
-            var _ctx = _this.canvas.getCtxElement();
-            _this.canvas.setEvent({
-                type: 'mousedown',
-                listener: function (e) {
-                    e.preventDefault();
-                    if (_this.model.isLoaded() === false)
-                        return;
-                    _this.canvas.drawing = true;
-                    _this.model.deactivateHalt();
-                    _this.model.lastDrawPredicted = false;
-                    _this.canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
-                }
-            });
-            _this.canvas.setEvent({
-                type: 'mouseout',
-                listener: function (e) { return __awaiter(_this, void 0, void 0, function () {
-                    var wasDrawing, _a;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                e.preventDefault();
-                                wasDrawing = this.canvas.drawing;
-                                this.canvas.drawing = false;
-                                return [4, sleep(sleepTimeOnMouseOut)];
-                            case 1:
-                                _b.sent();
-                                if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
-                                _a = this.showResults;
-                                return [4, this.model.analyzeDrawing()];
-                            case 2:
-                                _a.apply(this, [_b.sent()]);
-                                _b.label = 3;
-                            case 3: return [2];
-                        }
-                    });
-                }); }
-            });
-            _this.canvas.setEvent({
-                type: 'mousemove',
-                listener: function (e) {
-                    e.preventDefault();
-                    if (_this.canvas.drawing === false)
-                        return;
-                    var _a = _this.canvas.getLastCtxPosition(), x = _a.x, y = _a.y;
-                    _ctx.beginPath();
-                    _ctx.moveTo(x, y);
-                    _ctx.lineTo(e.offsetX, e.offsetY);
-                    _ctx.stroke();
-                    _this.canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
-                }
-            });
-            _this.canvas.setEvent({
-                type: 'mouseup',
-                listener: function (e) { return __awaiter(_this, void 0, void 0, function () {
-                    var wasDrawing, _a;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                e.preventDefault();
-                                wasDrawing = this.canvas.drawing;
-                                this.canvas.drawing = false;
-                                return [4, sleep(sleepTimeOnMouseUp)];
-                            case 1:
-                                _b.sent();
-                                if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
-                                _a = this.showResults;
-                                return [4, this.model.analyzeDrawing()];
-                            case 2:
-                                _a.apply(this, [_b.sent()]);
-                                _b.label = 3;
-                            case 3: return [2];
-                        }
-                    });
-                }); }
-            });
-            _this.canvas.setEvent({
-                type: 'touchstart',
-                listener: function (e) {
-                    e.preventDefault();
-                    if (_this.model.isLoaded() === false)
-                        return;
-                    _this.canvas.drawing = true;
-                    _this.model.lastDrawPredicted = false;
-                    _this.model.deactivateHalt();
-                    var _a = _canvas.getBoundingClientRect(), Ux = _a.x, Uy = _a.y, o = __rest(_a, ["x", "y"]);
-                    var _b = e.touches[0], Tx = _b.pageX, Ty = _b.pageY, a = __rest(_b, ["pageX", "pageY"]);
-                    _this.canvas.setLastCtxPosition({ x: Tx - Ux, y: Ty - Uy });
-                }
-            });
-            _this.canvas.setEvent({
-                type: 'touchmove',
-                listener: function (e) {
-                    e.preventDefault();
-                    if (_this.canvas.drawing === false)
-                        return;
-                    var clientRect = _canvas.getBoundingClientRect();
-                    var touch = e.touches[0];
-                    var _a = _this.canvas.getLastCtxPosition(), x = _a.x, y = _a.y;
-                    _ctx.beginPath();
-                    _ctx.moveTo(x, y);
-                    x = touch.pageX - clientRect.x;
-                    y = touch.pageY - clientRect.y;
-                    _ctx.lineTo(x, y);
-                    _ctx.stroke();
-                    _this.canvas.setLastCtxPosition({ x: x, y: y });
-                }
-            });
-            _this.canvas.setEvent({
-                type: 'touchend',
-                listener: function (e) { return __awaiter(_this, void 0, void 0, function () {
-                    var wasDrawing, _a;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                e.preventDefault();
-                                wasDrawing = this.canvas.drawing;
-                                this.canvas.drawing = false;
-                                return [4, sleep(sleepTimeOnMouseUp)];
-                            case 1:
-                                _b.sent();
-                                if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
-                                _a = this.showResults;
-                                return [4, this.model.analyzeDrawing()];
-                            case 2:
-                                _a.apply(this, [_b.sent()]);
-                                _b.label = 3;
-                            case 3: return [2];
-                        }
-                    });
-                }); }
-            });
-        };
-        this.showResults = function (prediction) {
-            if (prediction !== undefined) {
-                var name_1 = prediction.name, value = prediction.value, certainty = prediction.certainty, _ = __rest(prediction, ["name", "value", "certainty"]);
-                var prob = Number((certainty * 100).toFixed(2));
-                _this.outSection.write("\n                <div id='output-text'>\n                    The number drawn is <strong>" + value + "</strong> (<strong>" + name_1 + "</strong>)\n                <div>");
-                _this.log.writeLog("Prediction: " + value + "  (certainty = " + prob + "%)");
-            }
-            else {
-                _this.log.writeLog('App.showResults: called without prediction to show.');
-            }
-        };
-        this.resizeTheEntirePage = function (pageMarginIncrease) {
-            if (pageMarginIncrease === void 0) { pageMarginIncrease = 300; }
-            var innerH = window.innerHeight;
-            var output = document.getElementById('output');
-            var pipe = document.getElementById('pipeline');
-            var main = document.getElementsByTagName('html')[0];
-            var size = _this.canvas.idealCanvasSize();
-            var maxValue = max(innerH, pageMarginIncrease + size);
-            main.style.height = maxValue + "px";
-            output.style.width = size + "px";
-            pipe.style.width = output.style.width;
-            _this.canvas.resize();
-        };
-        this.run = function () {
-            _this.eraser.setEvent({
-                type: 'click',
-                listener: function () {
-                    _this.canvas.clear();
-                    _this.model.activateHalt(function () {
-                        _this.log.writeLog("App: clear button clicked, canceled prediction!");
-                    });
-                    if (_this.model.isLoaded() === true) {
-                        _this.outSection.defaultMessage();
-                    }
-                }
-            });
-            window.addEventListener('resize', function () {
-                _this.resizeTheEntirePage();
-                if (_this.model.isLoaded() === true) {
-                    _this.outSection.defaultMessage();
-                }
-            });
-            var _a = _this.settings.mouseTimeSettings, onUp = _a.onUp, onOut = _a.onOut;
-            _this.initializeCanvasEvents(onOut, onUp);
-            _this.resizeTheEntirePage();
-            _this.model.load();
-            _this.log.writeLog('App: Running the Digit Recognition Web App!');
-        };
         this.log = Logger.getInstance();
         this.eraser = new Button('erase-btn', 'Clear', 'Please wait');
-        this.outSection = new OutputLabel('output', "<div id='output-text'>\n                Draw any digit between <strong>0</strong> to <strong>9</strong>\n            <div>");
+        this.out = new OutputSection('output', "<div id='output-text'>\n                Draw any digit between <strong>0</strong> to <strong>9</strong>\n            <div>");
         var _a = this.settings, canvasSettings = _a.canvasSettings, modelSettings = _a.modelSettings;
         var width = canvasSettings.canvasSize, ctxSize = canvasSettings.ctxSize;
         var height = width;
         this.canvas = new Canvas('draw-canvas', { width: width, height: height }, ctxSize);
-        this.model = new Model(modelSettings, this.canvas, this.eraser, this.outSection);
+        this.model = new Model(modelSettings, this.canvas, this.eraser, this.out);
     }
+    App.prototype.initializeCanvasEvents = function (sleepTimeOnMouseOut, sleepTimeOnMouseUp) {
+        var _this = this;
+        if (sleepTimeOnMouseOut === void 0) { sleepTimeOnMouseOut = 1500; }
+        if (sleepTimeOnMouseUp === void 0) { sleepTimeOnMouseUp = 1350; }
+        var _canvas = this.canvas.getCanvasElement();
+        var _ctx = this.canvas.getCtxElement();
+        this.canvas.setEvent({
+            type: 'mousedown',
+            listener: function (e) {
+                e.preventDefault();
+                if (_this.model.isLoaded() === false)
+                    return;
+                _this.canvas.drawing = true;
+                _this.model.deactivateHalt();
+                _this.model.lastDrawPredicted = false;
+                _this.canvas.setLastCtxPosition({
+                    x: e.offsetX,
+                    y: e.offsetY
+                });
+            }
+        });
+        this.canvas.setEvent({
+            type: 'mouseout',
+            listener: function (e) { return __awaiter(_this, void 0, void 0, function () {
+                var wasDrawing, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            e.preventDefault();
+                            wasDrawing = this.canvas.drawing;
+                            this.canvas.drawing = false;
+                            return [4, sleep(sleepTimeOnMouseOut)];
+                        case 1:
+                            _b.sent();
+                            if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
+                            _a = this.showResults;
+                            return [4, this.model.analyzeDrawing()];
+                        case 2:
+                            _a.apply(this, [_b.sent()]);
+                            _b.label = 3;
+                        case 3: return [2];
+                    }
+                });
+            }); }
+        });
+        this.canvas.setEvent({
+            type: 'mousemove',
+            listener: function (e) {
+                e.preventDefault();
+                if (_this.canvas.drawing === false)
+                    return;
+                var _a = _this.canvas.getLastCtxPosition(), x = _a.x, y = _a.y;
+                _ctx.beginPath();
+                _ctx.moveTo(x, y);
+                _ctx.lineTo(e.offsetX, e.offsetY);
+                _ctx.stroke();
+                _this.canvas.setLastCtxPosition({
+                    x: e.offsetX,
+                    y: e.offsetY
+                });
+            }
+        });
+        this.canvas.setEvent({
+            type: 'mouseup',
+            listener: function (e) { return __awaiter(_this, void 0, void 0, function () {
+                var wasDrawing, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            e.preventDefault();
+                            wasDrawing = this.canvas.drawing;
+                            this.canvas.drawing = false;
+                            return [4, sleep(sleepTimeOnMouseUp)];
+                        case 1:
+                            _b.sent();
+                            if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
+                            _a = this.showResults;
+                            return [4, this.model.analyzeDrawing()];
+                        case 2:
+                            _a.apply(this, [_b.sent()]);
+                            _b.label = 3;
+                        case 3: return [2];
+                    }
+                });
+            }); }
+        });
+        this.canvas.setEvent({
+            type: 'touchstart',
+            listener: function (e) {
+                e.preventDefault();
+                if (_this.model.isLoaded() === false)
+                    return;
+                _this.canvas.drawing = true;
+                _this.model.lastDrawPredicted = false;
+                _this.model.deactivateHalt();
+                var _a = _canvas.getBoundingClientRect(), Ux = _a.x, Uy = _a.y;
+                var _b = e.touches[0], Tx = _b.pageX, Ty = _b.pageY;
+                _this.canvas.setLastCtxPosition({ x: Tx - Ux, y: Ty - Uy });
+            }
+        });
+        this.canvas.setEvent({
+            type: 'touchmove',
+            listener: function (e) {
+                e.preventDefault();
+                if (_this.canvas.drawing === false)
+                    return;
+                var clientRect = _canvas.getBoundingClientRect();
+                var touch = e.touches[0];
+                var _a = _this.canvas.getLastCtxPosition(), x = _a.x, y = _a.y;
+                _ctx.beginPath();
+                _ctx.moveTo(x, y);
+                x = touch.pageX - clientRect.x;
+                y = touch.pageY - clientRect.y;
+                _ctx.lineTo(x, y);
+                _ctx.stroke();
+                _this.canvas.setLastCtxPosition({ x: x, y: y });
+            }
+        });
+        this.canvas.setEvent({
+            type: 'touchend',
+            listener: function (e) { return __awaiter(_this, void 0, void 0, function () {
+                var wasDrawing, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            e.preventDefault();
+                            wasDrawing = this.canvas.drawing;
+                            this.canvas.drawing = false;
+                            return [4, sleep(sleepTimeOnMouseUp)];
+                        case 1:
+                            _b.sent();
+                            if (!(this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt())) return [3, 3];
+                            _a = this.showResults;
+                            return [4, this.model.analyzeDrawing()];
+                        case 2:
+                            _a.apply(this, [_b.sent()]);
+                            _b.label = 3;
+                        case 3: return [2];
+                    }
+                });
+            }); }
+        });
+    };
+    App.prototype.showResults = function (prediction) {
+        if (prediction !== undefined) {
+            var name_1 = prediction.name, value = prediction.value, certainty = prediction.certainty, _ = __rest(prediction, ["name", "value", "certainty"]);
+            var prob = Number((certainty * 100).toFixed(2));
+            this.out.write("\n                <div id='output-text'>\n                    The number drawn is <strong>" + value + "</strong> (<strong>" + name_1 + "</strong>)\n                <div>");
+            this.log.writeLog("Prediction: " + value + "  (certainty = " + prob + "%)");
+        }
+        else {
+            this.log.writeLog('App.showResults: called without prediction to show.');
+        }
+    };
+    App.prototype.resizeTheEntirePage = function (pageMarginIncrease) {
+        if (pageMarginIncrease === void 0) { pageMarginIncrease = 300; }
+        var innerH = window.innerHeight;
+        var output = document.getElementById('output');
+        var pipe = document.getElementById('pipeline');
+        var main = document.getElementsByTagName('html')[0];
+        var size = this.canvas.idealCanvasSize();
+        var increasedSize = size + pageMarginIncrease;
+        var maxValue = max(innerH, increasedSize);
+        main.style.height = maxValue + "px";
+        output.style.width = size + "px";
+        pipe.style.width = output.style.width;
+        this.canvas.resize();
+    };
+    App.prototype.run = function () {
+        var _this = this;
+        this.eraser.setEvent({
+            type: 'click',
+            listener: function () {
+                _this.canvas.clear();
+                _this.model.activateHalt(function () {
+                    _this.log.writeLog("App: clear button clicked, canceled prediction!");
+                });
+                if (_this.model.isLoaded() === true) {
+                    _this.out.defaultMessage();
+                }
+            }
+        });
+        window.addEventListener('resize', function () {
+            _this.resizeTheEntirePage();
+            if (_this.model.isLoaded() === true) {
+                _this.out.defaultMessage();
+            }
+        });
+        var _a = this.settings.mouseTimeSettings, onUp = _a.onUp, onOut = _a.onOut;
+        this.initializeCanvasEvents(onOut, onUp);
+        this.resizeTheEntirePage();
+        this.model.load();
+        this.log.writeLog('App: Running the Digit Recognition Web App!');
+    };
     return App;
 }());
 const _App = App;

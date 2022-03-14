@@ -4,96 +4,57 @@ import {
 } from './types';
 
 
-export const min = (...args: number[]): number => {
-    let minimun: number;
-
-    switch (args.length) {
-        case 0:
-            minimun = -Infinity;
-            break;
-        case 1:
-            minimun = args[0];
-            break;
-        default:
-            minimun = args[0];
-            for (let i = 1 ; i < args.length ; ++i)
-                minimun = minimun > args[i] ? args[i] : minimun;
-            break;
-    }
-
-    return minimun;
-}
+export const min = (...args: number[]): number =>
+    args.reduce((a, b) => a < b ? a : b);
 
 
-export const max = (...args: number[]): number => {
-    let maximum: number;
-
-    switch (args.length) {
-        case 0:
-            maximum = Infinity;
-            break;
-        case 1:
-            maximum = args[0];
-            break;
-        default:
-            maximum = args[0];
-            for (let i = 1 ; i < args.length ; ++i)
-                maximum = maximum < args[i] ? args[i] : maximum;
-            break;
-    }
-
-    return maximum;
-}
+export const max = (...args: number[]): number =>
+    args.reduce((a, b) => a > b ? a : b);
 
 
-export const sleep = (milisecs: number): Promise<unknown> => {
-    return new Promise(resolve => setTimeout(resolve, milisecs));
-}
+export const sleep = (milisecs: number): Promise<unknown> =>
+    new Promise(resolve => setTimeout(resolve, milisecs));
 
-export class OutputLabel {
+
+export class OutputSection {
     protected readonly element: HTMLElement;
 
-    constructor(
-        protected readonly selector: string,
-        protected readonly defaultMsg: string
-    ) {
+    constructor(protected readonly selector: string, protected readonly defaultMsg: string) {
         this.element = document.getElementById(this.selector);
     }
 
-    write = (message: string) => {
+    write(message: string) {
         this.element.innerHTML = message;
     }
 
-    defaultMessage = () => {
+    defaultMessage() {
         this.write(this.defaultMsg);
     }
 };
 
 
-export class Button extends OutputLabel {
+export class Button extends OutputSection {
     protected readonly button: HTMLButtonElement;
 
-    constructor(
-        selector: string,
-        defaultMsg: string,
-        private readonly disableMsg: string
-    ) {
+    constructor(selector: string, defaultMsg: string, private readonly disableMsg: string) {
         super(selector, defaultMsg);
-        this.button = (this.element as unknown) as HTMLButtonElement;
+        this.button = <unknown>this.element as HTMLButtonElement;
     }
 
-    enable = () => {
+    enable() {
         this.button.disabled = false;
         this.defaultMessage();
     }
 
-    disable = () => {
+    disable() {
         this.button.disabled = true;
         this.write(this.disableMsg);
     }
 
-    setEvent = (event: IEventSetter) => {
-        this.button.addEventListener(event.type, event.listener);
+    setEvent(event: IEventSetter) {
+        this.button.addEventListener(
+            event.type, event.listener
+        );
     }
 }
 

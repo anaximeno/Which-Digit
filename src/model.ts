@@ -1,5 +1,5 @@
 import { Button } from './common';
-import { OutputLabel } from './common';
+import { OutputSection } from './common';
 import { Logger, sleep } from './common';
 import { Canvas } from './canvas';
 
@@ -24,6 +24,7 @@ const DigitNames = {
 
 export class Model {
     private mnet: any;
+    private readonly log: Logger;
     private predictions: IPrediction[];
     private readonly inputShape: number[];
     private readonly paddingShape: number[][];
@@ -39,7 +40,7 @@ export class Model {
         private readonly settings: IModelSettings,
         private readonly canvas: Canvas,
         private readonly eraseButton: Button,
-        private readonly outputLabel: OutputLabel,
+        private readonly outputLabel: OutputSection,
     ) {
         const { padding, path } = this.settings;
 
@@ -54,6 +55,7 @@ export class Model {
 
         this.path = path;
         this.predictions = [];
+        this.log = Logger.getInstance();
     }
 
     isLoaded = (): boolean => this.modelWasLoaded;
@@ -62,7 +64,7 @@ export class Model {
         this.eraseButton.disable();
         this.mnet = await tf.loadLayersModel(this.path);
         this.modelWasLoaded = this.mnet !== undefined;
-        Logger.getInstance().writeLog('Model.load: ' + (this.modelWasLoaded ?
+        this.log.writeLog('Model.load: ' + (this.modelWasLoaded ?
             "The model was loaded successfully!" :
             "Error: The model was not loaded, try to reload the page.")
         );
@@ -92,15 +94,13 @@ export class Model {
         this.eraseButton.disable();
         this.outputLabel.write("Analyzing.");
 
-
         const inputTensor = this.getInputTensor();
-        const logger = Logger.getInstance();
 
         if (this.modelWasLoaded === false || this.canvas.drawing === true) {
             this.activateHalt(() => {
                 this.eraseButton.enable();
                 this.outputLabel.defaultMessage();
-                logger.writeLog('Model.analyzeDrawing: ' + (this.modelWasLoaded ?
+                this.log.writeLog('Model.analyzeDrawing: ' + (this.modelWasLoaded ?
                     'model was not loaded yet, prediction canceled!' : 
                     'user is drawing, prediction canceled!')
                 );
@@ -109,7 +109,7 @@ export class Model {
             this.activateHalt(() => {
                 this.eraseButton.enable();
                 this.outputLabel.write(`<div id='output-text'><strong>TIP</strong>: Click and Hold to draw.<\div>`);
-                logger.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
+                this.log.writeLog('Model.analyzeDrawing: canvas has no drawings, prediction canceled!');
             });
         }
 

@@ -5,7 +5,7 @@ import { max, sleep } from './common';
 import {
     Logger,
     Button,
-    OutputLabel
+    OutputSection
 } from './common';
 
 import {
@@ -18,7 +18,7 @@ import {
 export class App {
     private readonly canvas: Canvas;
     private readonly eraser: Button;
-    private readonly outSection: OutputLabel;
+    private readonly out: OutputSection;
     private readonly model: Model;
     private readonly log: Logger;
 
@@ -27,7 +27,7 @@ export class App {
 
         this.eraser = new Button('erase-btn', 'Clear', 'Please wait');
 
-        this.outSection = new OutputLabel(
+        this.out = new OutputSection(
             'output', 
             `<div id='output-text'>
                 Draw any digit between <strong>0</strong> to <strong>9</strong>
@@ -39,13 +39,13 @@ export class App {
         const height = width;
 
         this.canvas = new Canvas('draw-canvas', { width, height }, ctxSize);
-        this.model = new Model(modelSettings, this.canvas, this.eraser, this.outSection);
+        this.model = new Model(modelSettings, this.canvas, this.eraser, this.out);
     }
 
-    protected initializeCanvasEvents = (sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350) => {
+    protected initializeCanvasEvents(sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350) {
         const _canvas = this.canvas.getCanvasElement();
         const _ctx = this.canvas.getCtxElement();
-        
+
         this.canvas.setEvent({
             type: 'mousedown',
             listener: (e: MouseEvent) => {
@@ -55,7 +55,10 @@ export class App {
                 this.canvas.drawing = true;
                 this.model.deactivateHalt();
                 this.model.lastDrawPredicted = false;
-                this.canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
+                this.canvas.setLastCtxPosition({
+                    x: e.offsetX,
+                    y: e.offsetY
+                });
             }
         });
 
@@ -81,12 +84,18 @@ export class App {
                 let {x, y} = this.canvas.getLastCtxPosition();
                 _ctx.beginPath();
                 _ctx.moveTo(x, y);
-                _ctx.lineTo(e.offsetX, e.offsetY);
+                _ctx.lineTo(
+                    e.offsetX,
+                    e.offsetY
+                );
                 _ctx.stroke();
-                this.canvas.setLastCtxPosition({ x: e.offsetX, y: e.offsetY });
+                this.canvas.setLastCtxPosition({
+                    x: e.offsetX,
+                    y: e.offsetY
+                });
             }
         });
-        
+
         this.canvas.setEvent({
             type: 'mouseup',
             listener: async (e: MouseEvent) => {
@@ -109,12 +118,12 @@ export class App {
                 this.canvas.drawing = true;
                 this.model.lastDrawPredicted = false;
                 this.model.deactivateHalt();
-                const {x: Ux, y: Uy, ...o} = _canvas.getBoundingClientRect();
-                const {pageX: Tx, pageY: Ty, ...a} = e.touches[0];
+                const {x: Ux, y: Uy} = _canvas.getBoundingClientRect();
+                const {pageX: Tx, pageY: Ty} = e.touches[0];
                 this.canvas.setLastCtxPosition({x: Tx - Ux, y: Ty - Uy});
             }
         });
-    
+
         this.canvas.setEvent({
             type: 'touchmove',
             listener: (e: TouchEvent) => {
@@ -148,12 +157,12 @@ export class App {
         });
     }
 
-    private showResults = (prediction?: IPrediction) => {
+    private showResults(prediction?: IPrediction) {
         if (prediction !== undefined) {
             let {name, value, certainty, ..._} = prediction; 
             const prob = Number((certainty * 100).toFixed(2));
 
-            this.outSection.write(`
+            this.out.write(`
                 <div id='output-text'>
                     The number drawn is <strong>${value}</strong> (<strong>${name}</strong>)
                 <\div>`
@@ -165,13 +174,14 @@ export class App {
         }
     }
 
-    protected resizeTheEntirePage = (pageMarginIncrease: number = 300) => {
+    protected resizeTheEntirePage(pageMarginIncrease: number = 300) {
         const innerH = window.innerHeight;
         const output = document.getElementById('output');
         const pipe = document.getElementById('pipeline');
         const main = document.getElementsByTagName('html')[0];
         const size = this.canvas.idealCanvasSize();
-        const maxValue = <unknown>max(innerH, pageMarginIncrease + size) as string;
+        const increasedSize = size + pageMarginIncrease;
+        const maxValue = <unknown>max(innerH, increasedSize) as string;
 
         main.style.height = maxValue + "px";
         output.style.width = <unknown>size as string + "px"
@@ -180,7 +190,7 @@ export class App {
         this.canvas.resize();
     }
 
-    run = () => {        
+    run() {        
         this.eraser.setEvent({
             type: 'click',
             listener: () => {
@@ -191,7 +201,7 @@ export class App {
                         );
                 });
                 if (this.model.isLoaded() === true) {
-                    this.outSection.defaultMessage();
+                    this.out.defaultMessage();
                 }
             }
         });
@@ -199,7 +209,7 @@ export class App {
         window.addEventListener('resize', () => {
             this.resizeTheEntirePage();
             if (this.model.isLoaded() === true) {
-                this.outSection.defaultMessage();
+                this.out.defaultMessage();
             }
         });
 
