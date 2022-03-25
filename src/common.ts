@@ -33,7 +33,8 @@ export class OutputSection {
 };
 
 
-export class Button extends OutputSection {
+export
+class Button extends OutputSection {
     protected readonly button: HTMLButtonElement;
 
     constructor(selector: string, defaultMsg: string, private readonly disableMsg: string) {
@@ -60,7 +61,7 @@ export class Button extends OutputSection {
 
 
 /* This class implements the Singleton design pattern. */
-export class Logger{
+export class Logger {
     public static printDebugLogs: boolean = false;
     private static instance = undefined;
     static logs: ILogMessage[] = [];
@@ -77,12 +78,13 @@ export class Logger{
     }
 
     static getTime(): string {
+        const date = new Date();
+
         const zeroLeftPad = (num: number): string => {
             const str = <unknown>num as string;
-            return num < 10 ?  '0'+str : str;
+            return num < 10 ?  '0' + str : str;
         }
 
-        const date = new Date();
         const hours = zeroLeftPad(date.getHours());
         const minutes = zeroLeftPad(date.getMinutes());
         const seconds = zeroLeftPad(date.getSeconds());
@@ -96,10 +98,11 @@ export class Logger{
     }
 
     writeLog(message: string, force: boolean = false, hideTime: boolean = false) {
-        const currentTime = Logger.getTime();
-        const prefix = hideTime ? '' : `[${currentTime}] `;
-        this.saveLog({ time: currentTime, message: message });
+        const time = Logger.getTime();
+        this.saveLog({ time, message });
+
         if (Logger.printDebugLogs === true || force === true) {
+            const prefix = hideTime ? '' : `[${time}] `;
             console.log(`${prefix + message}`);
         }
     }

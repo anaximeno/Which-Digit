@@ -34,15 +34,22 @@ export class App {
             <\div>`
         );
 
-        const { canvasSettings, modelSettings } = this.settings;
-        const { canvasSize: width, ctxSize } = canvasSettings;
-        const height = width;
+        const {
+            canvasSettings: {
+                canvasSize,
+                ctxSize 
+            },
+            modelSettings
+        } = this.settings;
+
+        const height = canvasSize,
+              width = height;
 
         this.canvas = new Canvas('draw-canvas', { width, height }, ctxSize);
         this.model = new Model(modelSettings, this.canvas, this.eraser, this.out);
     }
 
-    protected initializeCanvasEvents(sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350) {
+    private initializeCanvasEvents(sleepTimeOnMouseOut: number = 1500, sleepTimeOnMouseUp: number = 1350) {
         const _canvas = this.canvas.getCanvasElement();
         const _ctx = this.canvas.getCtxElement();
 
@@ -69,8 +76,8 @@ export class App {
                 const wasDrawing = this.canvas.drawing;
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseOut);
-                if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing());
+                if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.shouldHalt()) {
+                    this.showResults(this.model.predictDigit());
                 }
             }
         });
@@ -103,8 +110,8 @@ export class App {
                 const wasDrawing = this.canvas.drawing;
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseUp);
-                if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing());
+                if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.shouldHalt()) {
+                    this.showResults(this.model.predictDigit());
                 }
             }
         });
@@ -150,17 +157,16 @@ export class App {
                 const wasDrawing = this.canvas.drawing;
                 this.canvas.drawing = false;
                 await sleep(sleepTimeOnMouseUp);
-                if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.checkHalt()) {
-                    this.showResults(await this.model.analyzeDrawing());
+                if (this.model.isLoaded() && wasDrawing && !this.canvas.drawing && !this.model.shouldHalt()) {
+                    this.showResults(this.model.predictDigit());
                 }
             }
         });
     }
 
-    private showResults(prediction?: IPrediction) {
-        if (prediction !== undefined) {
-            let {name, value, certainty, ..._} = prediction; 
-            const prob = Number((certainty * 100).toFixed(2));
+    private showResults(result: Promise<IPrediction>) {
+        result.then(prediction => {
+            const { name, value, certainty } = prediction; 
 
             this.out.write(`
                 <div id='output-text'>
@@ -168,10 +174,12 @@ export class App {
                 <\div>`
             );
 
+            const prob = Number((certainty * 100).toFixed(2));
+
             this.log.writeLog(`Prediction: ${value}  (certainty = ${prob}%)`);
-        } else {
-            this.log.writeLog('App.showResults: called without prediction to show.');
-        }
+        }).catch(reason => {
+            this.log.writeLog('App.showResults: Got no preditions!');
+        });
     }
 
     protected resizeTheEntirePage(pageMarginIncrease: number = 300) {
@@ -183,10 +191,10 @@ export class App {
         const increasedSize = size + pageMarginIncrease;
         const maxValue = <unknown>max(innerH, increasedSize) as string;
 
-        main.style.height = maxValue + "px";
-        output.style.width = <unknown>size as string + "px"
+        main.style.height  = `${maxValue}px`;
+        output.style.width = `${<unknown>size as string}px`;
         pipe.style.width = output.style.width;
-    
+
         this.canvas.resize();
     }
 
@@ -194,21 +202,17 @@ export class App {
         this.eraser.setEvent({
             type: 'click',
             listener: () => {
-                this.canvas.clear();
                 this.model.activateHalt(() => {
-                    this.log.writeLog(
-                        "App: clear button clicked, canceled prediction!"
-                        );
+                    this.canvas.clear();
+                    this.log.writeLog("App: clear button clicked, canceled prediction!");
+                    if (this.model.isLoaded()) { this.out.defaultMessage(); }
                 });
-                if (this.model.isLoaded() === true) {
-                    this.out.defaultMessage();
-                }
             }
         });
 
         window.addEventListener('resize', () => {
             this.resizeTheEntirePage();
-            if (this.model.isLoaded() === true) {
+            if (this.model.isLoaded()) {
                 this.out.defaultMessage();
             }
         });
@@ -218,8 +222,6 @@ export class App {
         this.initializeCanvasEvents(onOut, onUp);
         this.resizeTheEntirePage();
         this.model.load();
-        this.log.writeLog(
-            'App: Running the Digit Recognition Web App!'
-            );
+        this.log.writeLog('App: Running the Digit Recognition Web App!');
     }
 };

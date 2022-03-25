@@ -6,7 +6,7 @@ export interface IPrediction {
 };
 
 
-export type ModelPaddingType = 0 | 1 | 2 | 3 | 4;
+export type ModelPaddingType = 0 | 1 | 2 | 3 | 4 | 5;
 
 
 export interface IModelSettings {
@@ -45,12 +45,10 @@ export interface ICanvasSize {
     height: number;
 }
 
-
 export interface IEventSetter {
     type: string,
     listener: EventListenerOrEventListenerObject
 }
-
 
 export interface ILogMessage {
     time: string;
