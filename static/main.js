@@ -8,10 +8,10 @@ import { App } from "./app.js";
         modelSettings: {
             path: 'data/compiled/model.json',
             sleepMilisecsOnPrediction: 250,
-            padding: 1
+            padding: 2
         },
         canvasSettings: {
-            ctxSize: 22,
+            ctxSize: 24,
             canvasSize: 400
         },
         mouseTimeSettings: {
