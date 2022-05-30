@@ -68,6 +68,7 @@ export class Model {
 
         if (this.modelWasLoaded === true) {
             this.predict(this.getInputTensor());
+            this.canvas.clear();
             this.canvas.getCanvasElement().style.cursor = 'crosshair';
             this.outputLabel.defaultMessage();
             this.eraseButton.enable();
@@ -187,7 +188,10 @@ export class Model {
 
         return halt;
     }
-    
+   
+    // note: This is needed because sometimes the 
+    // image prediction method will be fired
+    // more than once for the same drawing. 
     checkLastDrawPredicted = (): boolean => {
         const lastDrawPredicted = this.lastDrawPredicted;
 
